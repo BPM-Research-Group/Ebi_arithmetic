@@ -33,3 +33,21 @@ macro_rules! f {
     };
 }
 pub use f;
+
+#[macro_export]
+/// Convenience short-hand macro to create a fraction representing zero.
+macro_rules! f0 {
+    () => {
+        Fraction::zero()
+    };
+}
+pub use f0;
+
+#[macro_export]
+/// Convenience short-hand macro to create a fraction representing one.
+macro_rules! f1 {
+    () => {
+        Fraction::one()
+    };
+}
+pub use f1;
