@@ -46,10 +46,10 @@ pub trait ChooseRandomly {
 pub type FractionRandomCache = FractionRandomCacheEnum;
 
 #[cfg(all(not(feature = "exactarithmetic"), feature = "approximatearithmetic"))]
-pub type FractionRandomCache = super::fraction_f64::FractionRandomCacheF64;
+pub type FractionRandomCache = FractionRandomCacheF64;
 
 #[cfg(all(feature = "exactarithmetic", not(feature = "approximatearithmetic")))]
-pub type FractionRandomCache = super::fraction_exact::FractionRandomCacheExact;
+pub type FractionRandomCache = FractionRandomCacheExact;
 
 pub enum FractionRandomCacheEnum {
     Exact(Vec<fraction::BigFraction>, BigUint),
@@ -116,7 +116,7 @@ impl ChooseRandomly for FractionEnum {
 
     fn choose_randomly_create_cache<'a>(
         mut fractions: impl Iterator<Item = &'a Self>,
-    ) -> Result<FractionRandomCache>
+    ) -> Result<FractionRandomCacheEnum>
     where
         Self: Sized,
         Self: 'a,
@@ -176,7 +176,7 @@ impl ChooseRandomly for FractionEnum {
         }
     }
 
-    fn choose_randomly_cached(cache: &FractionRandomCache) -> usize
+    fn choose_randomly_cached(cache: &FractionRandomCacheEnum) -> usize
     where
         Self: Sized,
     {

@@ -1,6 +1,6 @@
 [package]
 name = "ebi_arithmetic"
-version = "0.1.4"
+version = "0.1.5"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 keywords = []
@@ -15,7 +15,7 @@ name = "ebi_arithmetic"
 crate-type = ["cdylib", "lib"]
 
 [features]
-default = []
+default = [ ]
 exactarithmetic = []
 approximatearithmetic = []
 
