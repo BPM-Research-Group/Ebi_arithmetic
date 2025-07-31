@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{anyhow,Result};
 use std::sync::atomic::AtomicBool;
 
 //======================== exactness tools ========================//
@@ -38,7 +38,7 @@ pub trait MaybeExact {
     fn is_exact(&self) -> bool;
 
     /**
-     * This is a low-level function to extract an f64. Will only succeed if the fraction is approximate.
+     * This is a low-level function to extract an approximate value. Will only succeed if the fraction is approximate.
      */
     fn extract_approx(&self) -> Result<Self::Approximate>;
 
@@ -47,3 +47,34 @@ pub trait MaybeExact {
      */
     fn extract_exact(&self) -> Result<&Self::Exact>;
 }
+
+macro_rules! prim {
+    ($t: ident) => {
+        impl MaybeExact for $t {
+            type Approximate = ();
+            type Exact = $t;
+        
+            fn is_exact(&self) -> bool {
+                true
+            }
+        
+            fn extract_approx(&self) -> Result<Self::Approximate> {
+                Err(anyhow!("cannot extract approximate value"))
+            }
+        
+            fn extract_exact(&self) -> Result<&Self::Exact> {
+                Ok(self)
+            }
+        }
+    };
+}
+
+prim!(i128);
+prim!(i64);
+prim!(i32);
+prim!(i16);
+prim!(u128);
+prim!(u64);
+prim!(u32);
+prim!(u16);
+prim!(u8);
