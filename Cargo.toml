@@ -1,0 +1,37 @@
+[package]
+name = "ebi_arithmetic"
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+keywords = []
+categories = ["command-line-utilities"]
+description = "Exact arithmetic for Ebi - a stochastic process mining utility"
+homepage = "https://ebitools.org"
+repository = "https://github.com/BPM-Research-Group/ebi_arithmetic"
+readme = "README.md"
+
+[lib]
+name = "ebi"
+crate-type = ["cdylib", "lib"]
+
+[features]
+default = []
+exactarithmetic = []
+approximatearithmetic = []
+
+[dependencies]
+anyhow = "1.0.98"
+fraction = { version = "0.15.3", features = ["with-approx"] }
+num = "0.4.3"
+num-bigint = { version = "0.4.6", features = ["rand"] }
+num-rational = "0.4.2"
+num-traits = "0.2.19"
+rand = "0.8.5"
+
+[profile.release]
+debug = false
+strip = true
+panic = 'abort'
+opt-level = 3
+lto = true
+codegen-units = 1
