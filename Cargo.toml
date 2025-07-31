@@ -1,6 +1,6 @@
 [package]
 name = "ebi_arithmetic"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 keywords = []
@@ -11,7 +11,7 @@ repository = "https://github.com/BPM-Research-Group/ebi_arithmetic"
 readme = "README.md"
 
 [lib]
-name = "ebi"
+name = "ebi_arithmetic"
 crate-type = ["cdylib", "lib"]
 
 [features]
