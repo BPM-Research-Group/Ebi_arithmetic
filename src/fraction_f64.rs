@@ -12,7 +12,11 @@ use std::{
 
 use anyhow::{Error, Result, anyhow};
 
-use crate::{exact::MaybeExact, fraction::EPSILON, ebi_number::{Infinite, Normal}};
+use crate::{
+    ebi_number::{Infinite, Normal},
+    exact::MaybeExact,
+    fraction::EPSILON,
+};
 
 use super::ebi_number::{One, Signed, Zero};
 
@@ -282,6 +286,14 @@ impl Add<&FractionF64> for &FractionF64 {
     }
 }
 
+impl Add<FractionF64> for FractionF64 {
+    type Output = FractionF64;
+
+    fn add(self, rhs: FractionF64) -> Self::Output {
+        FractionF64(self.0.add(rhs.0))
+    }
+}
+
 impl<T> AddAssign<T> for FractionF64
 where
     T: Borrow<FractionF64>,
@@ -296,6 +308,14 @@ impl Sub<&FractionF64> for &FractionF64 {
     type Output = FractionF64;
 
     fn sub(self, rhs: &FractionF64) -> Self::Output {
+        FractionF64(self.0.sub(rhs.0))
+    }
+}
+
+impl Sub<FractionF64> for FractionF64 {
+    type Output = FractionF64;
+
+    fn sub(self, rhs: FractionF64) -> Self::Output {
         FractionF64(self.0.sub(rhs.0))
     }
 }
@@ -318,6 +338,14 @@ impl Mul<&FractionF64> for &FractionF64 {
     }
 }
 
+impl Mul<FractionF64> for FractionF64 {
+    type Output = FractionF64;
+
+    fn mul(self, rhs: FractionF64) -> Self::Output {
+        FractionF64(self.0.mul(rhs.0))
+    }
+}
+
 impl<T> MulAssign<T> for FractionF64
 where
     T: Borrow<FractionF64>,
@@ -332,6 +360,14 @@ impl Div<&FractionF64> for &FractionF64 {
     type Output = FractionF64;
 
     fn div(self, rhs: &FractionF64) -> Self::Output {
+        FractionF64(self.0.div(rhs.0))
+    }
+}
+
+impl Div<FractionF64> for FractionF64 {
+    type Output = FractionF64;
+
+    fn div(self, rhs: FractionF64) -> Self::Output {
         FractionF64(self.0.div(rhs.0))
     }
 }
@@ -613,7 +649,10 @@ ttype_signed!(i8);
 mod tests {
     use std::ops::Neg;
 
-    use crate::{fraction_f64::FractionF64, ebi_number::{One, Signed, Zero}};
+    use crate::{
+        ebi_number::{One, Signed, Zero},
+        fraction_f64::FractionF64,
+    };
 
     #[test]
     fn fraction_neg() {

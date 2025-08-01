@@ -16,7 +16,9 @@ use std::{
 };
 
 use crate::{
-    ebi_number::{EbiNumber, Infinite, Normal}, exact::{is_exact_globally, MaybeExact}, fraction::{UInt, EPSILON}
+    ebi_number::{EbiNumber, Infinite, Normal},
+    exact::{MaybeExact, is_exact_globally},
+    fraction::{EPSILON, UInt},
 };
 
 use super::ebi_number::{One, Signed, Zero};
@@ -575,6 +577,18 @@ impl Mul<&FractionEnum> for &FractionEnum {
     }
 }
 
+impl Mul<FractionEnum> for FractionEnum {
+    type Output = FractionEnum;
+
+    fn mul(self, rhs: FractionEnum) -> Self::Output {
+        match (self, rhs) {
+            (FractionEnum::Exact(x), FractionEnum::Exact(y)) => FractionEnum::Exact(x.mul(y)),
+            (FractionEnum::Approx(x), FractionEnum::Approx(y)) => FractionEnum::Approx(x.mul(y)),
+            _ => FractionEnum::CannotCombineExactAndApprox,
+        }
+    }
+}
+
 impl<T> MulAssign<T> for FractionEnum
 where
     T: Borrow<FractionEnum>,
@@ -1125,8 +1139,8 @@ mod tests {
     use std::ops::Neg;
 
     use crate::{
-        fraction_enum::FractionEnum,
         ebi_number::{One, Signed, Zero},
+        fraction_enum::FractionEnum,
     };
 
     #[test]

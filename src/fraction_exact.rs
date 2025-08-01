@@ -263,6 +263,16 @@ impl Add<&FractionExact> for &FractionExact {
     }
 }
 
+impl Add<FractionExact> for FractionExact {
+    type Output = FractionExact;
+
+    fn add(self, rhs: FractionExact) -> Self::Output {
+        match (self, rhs) {
+            (FractionExact(x), FractionExact(y)) => FractionExact(x.add(y)),
+        }
+    }
+}
+
 impl<T> AddAssign<T> for FractionExact
 where
     T: Borrow<FractionExact>,
@@ -294,6 +304,16 @@ impl Sub<&FractionExact> for &FractionExact {
     }
 }
 
+impl Sub<FractionExact> for FractionExact {
+    type Output = FractionExact;
+
+    fn sub(self, rhs: FractionExact) -> Self::Output {
+        match (self, rhs) {
+            (FractionExact(x), FractionExact(y)) => FractionExact(x.sub(y)),
+        }
+    }
+}
+
 impl<T> SubAssign<T> for FractionExact
 where
     T: Borrow<FractionExact>,
@@ -316,6 +336,16 @@ impl Mul<&FractionExact> for &FractionExact {
     }
 }
 
+impl Mul<FractionExact> for FractionExact {
+    type Output = FractionExact;
+
+    fn mul(self, rhs: FractionExact) -> Self::Output {
+        match (self, rhs) {
+            (FractionExact(x), FractionExact(y)) => FractionExact(x.mul(y)),
+        }
+    }
+}
+
 impl<T> MulAssign<T> for FractionExact
 where
     T: Borrow<FractionExact>,
@@ -332,6 +362,16 @@ impl Div<&FractionExact> for &FractionExact {
     type Output = FractionExact;
 
     fn div(self, rhs: &FractionExact) -> Self::Output {
+        match (self, rhs) {
+            (FractionExact(x), FractionExact(y)) => FractionExact(x.div(y)),
+        }
+    }
+}
+
+impl Div<FractionExact> for FractionExact {
+    type Output = FractionExact;
+
+    fn div(self, rhs: FractionExact) -> Self::Output {
         match (self, rhs) {
             (FractionExact(x), FractionExact(y)) => FractionExact(x.div(y)),
         }
@@ -409,13 +449,13 @@ impl Hash for FractionExact {
 
 impl Sum for FractionExact {
     fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
-        iter.fold(Self::zero(), |sum, f| &sum + &f)
+        iter.fold(<FractionExact as Zero>::zero(), |sum, f| &sum + &f)
     }
 }
 
 impl<'a> Sum<&'a FractionExact> for FractionExact {
     fn sum<I: Iterator<Item = &'a FractionExact>>(iter: I) -> Self {
-        iter.fold(FractionExact::zero(), |sum, f| &sum + f)
+        iter.fold(<FractionExact as Zero>::zero(), |sum, f| &sum + f)
     }
 }
 
