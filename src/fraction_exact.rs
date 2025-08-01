@@ -15,9 +15,9 @@ use std::{
 };
 
 use crate::{
+    ebi_number::{EbiNumber, Infinite, Normal, One, Signed, Zero},
     exact::MaybeExact,
     fraction::UInt,
-    traits::{One, Signed, Zero},
 };
 
 #[derive(Clone)]
@@ -82,6 +82,8 @@ impl FractionExact {
     }
 }
 
+impl EbiNumber for FractionExact {}
+
 impl MaybeExact for FractionExact {
     type Approximate = f64;
     type Exact = fraction::BigFraction;
@@ -142,6 +144,18 @@ impl Signed for FractionExact {
 
     fn is_not_positive(&self) -> bool {
         !self.is_positive()
+    }
+}
+
+impl Infinite for FractionExact {
+    fn is_infinite(&self) -> bool {
+        self.0.is_infinite()
+    }
+}
+
+impl Normal for FractionExact {
+    fn is_nan(&self) -> bool {
+        self.0.is_nan()
     }
 }
 
@@ -701,7 +715,10 @@ ttype_signed!(i8);
 mod tests {
     use std::ops::Neg;
 
-    use crate::{fraction_exact::FractionExact, traits::{One, Signed, Zero}};
+    use crate::{
+        ebi_number::{One, Signed, Zero},
+        fraction_exact::FractionExact,
+    };
 
     #[test]
     fn fraction_neg() {

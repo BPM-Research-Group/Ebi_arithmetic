@@ -1,12 +1,4 @@
-pub trait One: Sized {
-    fn one() -> Self;
-
-    fn set_one(&mut self) {
-        *self = One::one();
-    }
-
-    fn is_one(&self) -> bool;
-}
+pub trait EbiNumber: Zero + One + Infinite + Normal {}
 
 pub trait Zero: Sized {
     fn zero() -> Self;
@@ -16,6 +8,16 @@ pub trait Zero: Sized {
     }
 
     fn is_zero(&self) -> bool;
+}
+
+pub trait One: Sized {
+    fn one() -> Self;
+
+    fn set_one(&mut self) {
+        *self = One::one();
+    }
+
+    fn is_one(&self) -> bool;
 }
 
 pub trait Signed: Sized {
@@ -29,11 +31,15 @@ pub trait Signed: Sized {
 
     /// For exact arithmetic: Returns true if the number is positive or zero.
     /// For approximate arithmetic: returns true if the number is larger than -epsilon
-    fn is_not_negative(&self) -> bool;
+    fn is_not_negative(&self) -> bool {
+        !self.is_negative()
+    }
 
     /// For exact arithmetic: Returns true if the number is negative or zero.
     /// For approximate arithmetic: returns true if the number is smaller than epsilon
-    fn is_not_positive(&self) -> bool;
+    fn is_not_positive(&self) -> bool {
+        !self.is_positive()
+    }
 }
 
 pub trait Infinite: Signed {
@@ -52,4 +58,13 @@ pub trait Infinite: Signed {
     fn is_negative_infinite(&self) -> bool {
         self.is_infinite() && self.is_negative()
     }
+}
+
+pub trait Normal: Infinite + Signed + Zero {
+    /// Returns true if the number is neither zero, infinite, subnormal, or NaN.
+    fn is_normal(&self) -> bool {
+        !self.is_zero() && !self.is_infinite() && !self.is_nan()
+    }
+
+    fn is_nan(&self) -> bool;
 }

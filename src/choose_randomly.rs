@@ -9,7 +9,7 @@ use crate::{
     fraction_enum::FractionEnum,
     fraction_exact::FractionExact,
     fraction_f64::FractionF64,
-    traits::Zero,
+    ebi_number::Zero,
 };
 
 pub trait ChooseRandomly {

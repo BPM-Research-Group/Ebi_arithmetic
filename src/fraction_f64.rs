@@ -12,9 +12,9 @@ use std::{
 
 use anyhow::{Error, Result, anyhow};
 
-use crate::{exact::MaybeExact, fraction::EPSILON};
+use crate::{exact::MaybeExact, fraction::EPSILON, ebi_number::{Infinite, Normal}};
 
-use super::traits::{One, Signed, Zero};
+use super::ebi_number::{One, Signed, Zero};
 
 #[derive(Debug, Clone, Copy)]
 pub struct FractionF64(pub f64);
@@ -125,6 +125,18 @@ impl Signed for FractionF64 {
 
     fn is_not_positive(&self) -> bool {
         self.0.is_not_positive()
+    }
+}
+
+impl Infinite for FractionF64 {
+    fn is_infinite(&self) -> bool {
+        self.0.is_infinite()
+    }
+}
+
+impl Normal for FractionF64 {
+    fn is_nan(&self) -> bool {
+        self.0.is_nan()
     }
 }
 
@@ -601,7 +613,7 @@ ttype_signed!(i8);
 mod tests {
     use std::ops::Neg;
 
-    use crate::{fraction_f64::FractionF64, traits::{One, Signed, Zero}};
+    use crate::{fraction_f64::FractionF64, ebi_number::{One, Signed, Zero}};
 
     #[test]
     fn fraction_neg() {

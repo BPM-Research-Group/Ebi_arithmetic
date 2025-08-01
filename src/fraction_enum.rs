@@ -16,12 +16,10 @@ use std::{
 };
 
 use crate::{
-    exact::{is_exact_globally, MaybeExact},
-    fraction::{UInt, EPSILON},
-    traits::Infinite,
+    ebi_number::{EbiNumber, Infinite, Normal}, exact::{is_exact_globally, MaybeExact}, fraction::{UInt, EPSILON}
 };
 
-use super::traits::{One, Signed, Zero};
+use super::ebi_number::{One, Signed, Zero};
 
 #[derive(Clone)]
 pub enum FractionEnum {
@@ -160,6 +158,8 @@ impl FractionEnum {
     }
 }
 
+impl EbiNumber for FractionEnum {}
+
 impl MaybeExact for FractionEnum {
     type Approximate = f64;
     type Exact = BigFraction;
@@ -297,6 +297,23 @@ impl Infinite for FractionEnum {
     }
 }
 
+impl Normal for FractionEnum {
+    fn is_normal(&self) -> bool {
+        self != &FractionEnum::CannotCombineExactAndApprox
+            && !self.is_zero()
+            && !self.is_infinite()
+            && !self.is_nan()
+    }
+
+    fn is_nan(&self) -> bool {
+        match self {
+            FractionEnum::Exact(f) => f.is_nan(),
+            FractionEnum::Approx(f) => f.is_nan(),
+            FractionEnum::CannotCombineExactAndApprox => false,
+        }
+    }
+}
+
 impl Default for FractionEnum {
     fn default() -> Self {
         Self::zero()
@@ -322,9 +339,6 @@ impl FromStr for FractionEnum {
         }
     }
 }
-
-
-
 
 impl From<&FractionEnum> for FractionEnum {
     fn from(value: &FractionEnum) -> Self {
@@ -1110,7 +1124,10 @@ ttype_signed!(i8);
 mod tests {
     use std::ops::Neg;
 
-    use crate::{fraction_enum::FractionEnum, traits::{One, Signed, Zero}};
+    use crate::{
+        fraction_enum::FractionEnum,
+        ebi_number::{One, Signed, Zero},
+    };
 
     #[test]
     fn fraction_neg() {
