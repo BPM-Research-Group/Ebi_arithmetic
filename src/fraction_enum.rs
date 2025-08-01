@@ -547,6 +547,18 @@ impl Sub<&FractionEnum> for &FractionEnum {
     }
 }
 
+impl Sub<FractionEnum> for FractionEnum {
+    type Output = FractionEnum;
+
+    fn sub(self, rhs: FractionEnum) -> Self::Output {
+        match (self, rhs) {
+            (FractionEnum::Exact(x), FractionEnum::Exact(y)) => FractionEnum::Exact(x.sub(y)),
+            (FractionEnum::Approx(x), FractionEnum::Approx(y)) => FractionEnum::Approx(x.sub(y)),
+            _ => FractionEnum::CannotCombineExactAndApprox,
+        }
+    }
+}
+
 impl<T> SubAssign<T> for FractionEnum
 where
     T: Borrow<FractionEnum>,
@@ -611,6 +623,18 @@ impl Div<&FractionEnum> for &FractionEnum {
     type Output = FractionEnum;
 
     fn div(self, rhs: &FractionEnum) -> Self::Output {
+        match (self, rhs) {
+            (FractionEnum::Exact(x), FractionEnum::Exact(y)) => FractionEnum::Exact(x.div(y)),
+            (FractionEnum::Approx(x), FractionEnum::Approx(y)) => FractionEnum::Approx(x.div(y)),
+            _ => FractionEnum::CannotCombineExactAndApprox,
+        }
+    }
+}
+
+impl Div<FractionEnum> for FractionEnum {
+    type Output = FractionEnum;
+
+    fn div(self, rhs: FractionEnum) -> Self::Output {
         match (self, rhs) {
             (FractionEnum::Exact(x), FractionEnum::Exact(y)) => FractionEnum::Exact(x.div(y)),
             (FractionEnum::Approx(x), FractionEnum::Approx(y)) => FractionEnum::Approx(x.div(y)),
