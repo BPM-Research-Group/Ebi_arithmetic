@@ -128,6 +128,12 @@ impl Signed for FractionF64 {
     }
 }
 
+impl Default for FractionF64 {
+    fn default() -> Self {
+        Self(Default::default())
+    }
+}
+
 impl PartialEq for FractionF64 {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {

@@ -297,6 +297,12 @@ impl Infinite for FractionEnum {
     }
 }
 
+impl Default for FractionEnum {
+    fn default() -> Self {
+        Self::zero()
+    }
+}
+
 impl FromStr for FractionEnum {
     type Err = Error;
 

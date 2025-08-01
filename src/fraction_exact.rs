@@ -145,6 +145,12 @@ impl Signed for FractionExact {
     }
 }
 
+impl Default for FractionExact {
+    fn default() -> Self {
+        Self(Default::default())
+    }
+}
+
 impl FromStr for FractionExact {
     type Err = Error;
 
