@@ -1,6 +1,6 @@
 use num::{BigUint, One as NumOne, Zero as NumZero};
 
-use crate::ebi_number::{EbiNumber, Infinite, Normal, One, Signed, Zero};
+use crate::ebi_number::{EbiNumber, Infinite, Normal, One, Round, Signed, Zero};
 
 impl EbiNumber for BigUint {}
 
@@ -47,5 +47,15 @@ impl Infinite for BigUint {
 impl Normal for BigUint {
     fn is_nan(&self) -> bool {
         false
+    }
+}
+
+impl Round for BigUint {
+    fn floor(self) -> Self {
+        self
+    }
+
+    fn ceil(self) -> Self {
+        self
     }
 }

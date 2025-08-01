@@ -1,7 +1,7 @@
 use num::Float;
 
 use crate::{
-    ebi_number::{EbiNumber, Infinite, Normal, One, Signed, Zero},
+    ebi_number::{EbiNumber, Infinite, Normal, One, Round, Signed, Zero},
     fraction::EPSILON,
 };
 
@@ -60,6 +60,16 @@ macro_rules! float {
         impl Normal for $t {
             fn is_nan(&self) -> bool {
                 Float::is_nan(*self)
+            }
+        }
+
+        impl Round for $t {
+            fn floor(self) -> $t {
+                $t::floor(self)
+            }
+
+            fn ceil(self) -> $t {
+                $t::ceil(self)
             }
         }
     };

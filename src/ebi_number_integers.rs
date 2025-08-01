@@ -1,7 +1,7 @@
 // ============ implementations ============
 use num::Signed as NumSigned;
 
-use crate::ebi_number::{EbiNumber, Infinite, Normal, One, Signed, Zero};
+use crate::ebi_number::{EbiNumber, Infinite, Normal, One, Round, Signed, Zero};
 
 macro_rules! ttype_signed {
     ($t:ident) => {
@@ -50,6 +50,16 @@ macro_rules! ttype_signed {
         impl Normal for $t {
             fn is_nan(&self) -> bool {
                 false
+            }
+        }
+
+        impl Round for $t {
+            fn floor(self) -> Self {
+                self
+            }
+
+            fn ceil(self) -> Self {
+                self
             }
         }
     };

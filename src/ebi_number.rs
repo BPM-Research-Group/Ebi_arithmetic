@@ -1,4 +1,4 @@
-pub trait EbiNumber: Zero + One + Infinite + Normal {}
+pub trait EbiNumber: Zero + One + Infinite + Normal + Round {}
 
 pub trait Zero: Sized {
     fn zero() -> Self;
@@ -60,11 +60,19 @@ pub trait Infinite: Signed {
     }
 }
 
-pub trait Normal: Infinite + Signed + Zero {
+pub trait Normal: Infinite + Signed + Zero + Sized {
     /// Returns true if the number is neither zero, infinite, subnormal, or NaN.
     fn is_normal(&self) -> bool {
         !self.is_zero() && !self.is_infinite() && !self.is_nan()
     }
 
     fn is_nan(&self) -> bool;
+}
+
+pub trait Round: Sized {
+    /// Returns the largest integer less than or equal to `self`.
+    fn floor(self) -> Self;
+
+    /// Returns the smallest integer greater than or equal to `self`.
+    fn ceil(self) -> Self;
 }

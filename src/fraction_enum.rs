@@ -16,7 +16,7 @@ use std::{
 };
 
 use crate::{
-    ebi_number::{EbiNumber, Infinite, Normal},
+    ebi_number::{EbiNumber, Infinite, Normal, Round},
     exact::{MaybeExact, is_exact_globally},
     fraction::{EPSILON, UInt},
 };
@@ -312,6 +312,24 @@ impl Normal for FractionEnum {
             FractionEnum::Exact(f) => f.is_nan(),
             FractionEnum::Approx(f) => f.is_nan(),
             FractionEnum::CannotCombineExactAndApprox => false,
+        }
+    }
+}
+
+impl Round for FractionEnum {
+    fn floor(self) -> Self {
+        match self {
+            Self::Exact(f) => Self::Exact(f.floor()),
+            Self::Approx(f) => Self::Approx(f.floor()),
+            Self::CannotCombineExactAndApprox => Self::CannotCombineExactAndApprox,
+        }
+    }
+
+    fn ceil(self) -> Self {
+        match self {
+            Self::Exact(f) => Self::Exact(f.ceil()),
+            Self::Approx(f) => Self::Approx(f.ceil()),
+            Self::CannotCombineExactAndApprox => Self::CannotCombineExactAndApprox,
         }
     }
 }

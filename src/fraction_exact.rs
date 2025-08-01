@@ -15,7 +15,7 @@ use std::{
 };
 
 use crate::{
-    ebi_number::{EbiNumber, Infinite, Normal, One, Signed, Zero},
+    ebi_number::{EbiNumber, Infinite, Normal, One, Round, Signed, Zero},
     exact::MaybeExact,
     fraction::UInt,
 };
@@ -156,6 +156,16 @@ impl Infinite for FractionExact {
 impl Normal for FractionExact {
     fn is_nan(&self) -> bool {
         self.0.is_nan()
+    }
+}
+
+impl Round for FractionExact {
+    fn floor(self) -> Self {
+        Self(self.0.floor())
+    }
+
+    fn ceil(self) -> Self {
+        Self(self.0.ceil())
     }
 }
 
