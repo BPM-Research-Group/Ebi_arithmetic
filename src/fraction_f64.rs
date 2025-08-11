@@ -13,7 +13,7 @@ use std::{
 use anyhow::{Error, Result, anyhow};
 
 use crate::{
-    ebi_number::{Infinite, Normal},
+    ebi_number::{EbiNumber, Infinite, Normal, Round},
     exact::MaybeExact,
     fraction::EPSILON,
 };
@@ -72,6 +72,8 @@ impl FractionF64 {
         Self(self.0.recip())
     }
 }
+
+impl EbiNumber for FractionF64 {}
 
 impl MaybeExact for FractionF64 {
     type Approximate = f64;
@@ -141,6 +143,16 @@ impl Infinite for FractionF64 {
 impl Normal for FractionF64 {
     fn is_nan(&self) -> bool {
         self.0.is_nan()
+    }
+}
+
+impl Round for FractionF64 {
+    fn floor(self) -> Self {
+        FractionF64(self.0.floor())
+    }
+
+    fn ceil(self) -> Self {
+        FractionF64(self.0.ceil())
     }
 }
 
