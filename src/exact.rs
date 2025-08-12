@@ -41,7 +41,7 @@ pub trait MaybeExact {
     /**
      * This is a low-level function to extract an approximate value. Will only succeed if the fraction is approximate.
      */
-    fn extract_approx(&self) -> Result<Self::Approximate>;
+    fn extract_approx(&self) -> Result<&Self::Approximate>;
 
     /**
      * This is a low-level function to extract an exact value. Will only succeed if the fraction is exact.
@@ -59,8 +59,8 @@ macro_rules! approx {
                 false
             }
 
-            fn extract_approx(&self) -> Result<Self::Approximate> {
-                Ok(*self)
+            fn extract_approx(&self) -> Result<&Self::Approximate> {
+                Ok(self)
             }
 
             fn extract_exact(&self) -> Result<&Self::Exact> {
@@ -80,7 +80,7 @@ macro_rules! exact {
                 true
             }
 
-            fn extract_approx(&self) -> Result<Self::Approximate> {
+            fn extract_approx(&self) -> Result<&Self::Approximate> {
                 Err(anyhow!("cannot extract approximate value"))
             }
 

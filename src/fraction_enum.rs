@@ -174,10 +174,10 @@ impl MaybeExact for FractionEnum {
         }
     }
 
-    fn extract_approx(&self) -> Result<f64> {
+    fn extract_approx(&self) -> Result<&f64> {
         match self {
             FractionEnum::Exact(_) => Err(anyhow!("cannot extract a float from a fraction")),
-            FractionEnum::Approx(f) => Ok(*f),
+            FractionEnum::Approx(f) => Ok(f),
             FractionEnum::CannotCombineExactAndApprox => {
                 Err(anyhow!("cannot combine exact and approximate arithmetic"))
             }
@@ -469,6 +469,37 @@ impl TryFrom<(BigUint, BigUint)> for FractionEnum {
         }
     }
 }
+
+#[macro_export]
+/// Convenience short-hand macro to create fractions.
+macro_rules! f_en {
+    ($e: expr) => {
+        FractionEnum::from($e)
+    };
+
+    ($e: expr, $f: expr) => {
+        FractionEnum::from(($e, $f))
+    };
+}
+pub use f_en;
+
+#[macro_export]
+/// Convenience short-hand macro to create a fraction representing zero.
+macro_rules! f0_en {
+    () => {
+        FractionEnum::zero()
+    };
+}
+pub use f0_en;
+
+#[macro_export]
+/// Convenience short-hand macro to create a fraction representing one.
+macro_rules! f1_en {
+    () => {
+        FractionEnum::one()
+    };
+}
+pub use f1_en;
 
 impl std::fmt::Display for FractionEnum {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

@@ -155,7 +155,7 @@ impl ChooseRandomly for FractionEnum {
             //approximate mode
             if let Some(first) = fractions.next() {
                 let mut cumulative_probabilities = vec![
-                    first
+                    *first
                         .extract_approx()
                         .with_context(|| "cannot combine exact and approximate arithmetic")?,
                 ];
@@ -387,7 +387,7 @@ impl ChooseRandomly for FractionF64 {
         let mut rng = rand::thread_rng();
         let rand_val = FractionF64::from(
             rng.gen_range(
-                0.0..=cache
+                0.0..=*cache
                     .cumulative_probabilities
                     .last()
                     .unwrap()

@@ -51,3 +51,7 @@ macro_rules! f1 {
     };
 }
 pub use f1;
+
+pub(crate) trait ToExact<T> {
+    fn to_exact(value: T) -> fraction::BigFraction;
+}

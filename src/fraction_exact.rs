@@ -1,7 +1,7 @@
 use anyhow::{Error, Result, anyhow};
 use fraction::{BigFraction, BigUint, GenericFraction, Sign};
 use num::{BigInt, One as NumOne, Zero as NumZero};
-use num_bigint::ToBigUint;
+use num_bigint::{ToBigInt, ToBigUint};
 use num_rational::Ratio;
 use std::{
     borrow::Borrow,
@@ -17,7 +17,7 @@ use std::{
 use crate::{
     ebi_number::{EbiNumber, Infinite, Normal, One, Round, Signed, Zero},
     exact::MaybeExact,
-    fraction::UInt,
+    fraction::{ToExact, UInt},
 };
 
 #[derive(Clone)]
@@ -92,7 +92,7 @@ impl MaybeExact for FractionExact {
         true
     }
 
-    fn extract_approx(&self) -> Result<f64> {
+    fn extract_approx(&self) -> Result<&f64> {
         Err(anyhow!("cannot extract a float from a fraction"))
     }
 
@@ -250,6 +250,71 @@ impl TryFrom<(BigUint, BigUint)> for FractionExact {
         )))
     }
 }
+
+impl From<(i64, BigUint)> for FractionExact {
+    fn from(value: (i64, BigUint)) -> Self {
+        Self(Self::to_exact(value))
+    }
+}
+
+impl ToExact<(i64, BigUint)> for FractionExact {
+    fn to_exact(value: (i64, BigUint)) -> fraction::BigFraction {
+        let num = value.0.to_bigint().unwrap();
+        let den = value.1;
+        Self::to_exact((num, den))
+    }
+}
+
+impl From<(BigInt, BigUint)> for FractionExact {
+    fn from(value: (BigInt, BigUint)) -> Self {
+        Self(Self::to_exact(value))
+    }
+}
+
+impl ToExact<(BigInt, BigUint)> for FractionExact {
+    fn to_exact(value: (BigInt, BigUint)) -> fraction::BigFraction {
+        //extract the sign
+        if let Some(num) = value.0.to_biguint() {
+            //positive
+            GenericFraction::Rational(Sign::Plus, Ratio::new(num, value.1))
+        } else {
+            //negative
+            let num = value.0.abs().to_biguint().unwrap();
+            GenericFraction::Rational(Sign::Plus, Ratio::new(num, value.1))
+        }
+    }
+}
+
+#[macro_export]
+/// Convenience short-hand macro to create fractions.
+macro_rules! f_e {
+    ($e: expr) => {
+        FractionExact::from($e)
+    };
+
+    ($e: expr, $f: expr) => {
+        FractionExact::from(($e, $f))
+    };
+}
+pub use f_e;
+
+#[macro_export]
+/// Convenience short-hand macro to create a fraction representing zero.
+macro_rules! f0_e {
+    () => {
+        FractionExact::zero()
+    };
+}
+pub use f0_e;
+
+#[macro_export]
+/// Convenience short-hand macro to create a fraction representing one.
+macro_rules! f1_e {
+    () => {
+        FractionExact::one()
+    };
+}
+pub use f1_e;
 
 impl std::fmt::Display for FractionExact {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

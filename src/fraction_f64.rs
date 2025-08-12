@@ -83,8 +83,8 @@ impl MaybeExact for FractionF64 {
         false
     }
 
-    fn extract_approx(&self) -> Result<f64> {
-        Ok(self.0)
+    fn extract_approx(&self) -> Result<&f64> {
+        Ok(&self.0)
     }
 
     fn extract_exact(&self) -> Result<&fraction::BigFraction> {
