@@ -1,6 +1,6 @@
 [package]
 name = "ebi_arithmetic"
-version = "0.1.11"
+version = "0.1.12"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 keywords = []
@@ -20,7 +20,7 @@ exactarithmetic = []
 approximatearithmetic = []
 
 [dependencies]
-anyhow = "1.0.98"
+anyhow = "1.0.99"
 fraction = { version = "0.15.3", features = ["with-approx"] }
 num = "0.4.3"
 num-bigint = { version = "0.4.6", features = ["rand"] }

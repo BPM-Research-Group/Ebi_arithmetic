@@ -1,9 +1,9 @@
 use crate::{ebi_matrix::EbiMatrix, exact::MaybeExact, fraction_f64::FractionF64};
-use anyhow::anyhow;
+use anyhow::{Result, anyhow};
 
 #[derive(Clone)]
 pub struct FractionMatrixF64 {
-    values: Vec<Vec<FractionF64>>,
+    values: Vec<Vec<f64>>,
     number_of_columns: usize,
 }
 
@@ -11,7 +11,15 @@ impl FractionMatrixF64 {
     /// Obtains an element from the matrix.
     /// This may be an expensive operation.
     pub fn get(&self, row: usize, column: usize) -> FractionF64 {
-        self.values[row][column]
+        FractionF64(self.values[row][column])
+    }
+
+    pub fn to_vec(self) -> Result<Vec<Vec<FractionF64>>> {
+        Ok(self
+            .values
+            .into_iter()
+            .map(|row| row.into_iter().map(|f| FractionF64(f)).collect())
+            .collect())
     }
 }
 
@@ -44,7 +52,10 @@ impl From<Vec<Vec<FractionF64>>> for FractionMatrixF64 {
             0
         };
         Self {
-            values,
+            values: values
+                .into_iter()
+                .map(|row| row.into_iter().map(|f| f.0).collect())
+                .collect(),
             number_of_columns,
         }
     }
@@ -64,5 +75,29 @@ impl MaybeExact for FractionMatrixF64 {
 
     fn extract_exact(&self) -> anyhow::Result<&Self::Exact> {
         Err(anyhow!("cannot extract a fraction from a float"))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        ebi_matrix::EbiMatrix, f_a, fraction_f64::FractionF64,
+        fraction_matrix_f64::FractionMatrixF64,
+    };
+
+    #[test]
+    fn fraction_matrix_reversible() {
+        let m1 = vec![vec![
+            FractionF64::infinity(),
+            FractionF64::neg_infinity(),
+            f_a!(8, 3),
+        ]];
+
+        let m2: FractionMatrixF64 = m1.clone().into();
+        let m2 = m2.optimise();
+
+        let m3 = m2.to_vec().unwrap();
+
+        assert_eq!(m1, m3);
     }
 }

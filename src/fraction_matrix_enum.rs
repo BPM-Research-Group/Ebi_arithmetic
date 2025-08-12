@@ -68,6 +68,50 @@ impl FractionMatrixEnum {
         }
     }
 
+    pub fn to_vec(self) -> Result<Vec<Vec<FractionEnum>>> {
+        match self {
+            FractionMatrixEnum::F64 { values, .. } => Ok(values
+                .into_iter()
+                .map(|row| row.into_iter().map(|f| FractionEnum::Approx(f)).collect())
+                .collect()),
+            FractionMatrixEnum::Fractions { values, .. } => Ok(values
+                .into_iter()
+                .map(|row| row.into_iter().map(|f| FractionEnum::Exact(f)).collect())
+                .collect()),
+            FractionMatrixEnum::I64 {
+                values,
+                denominator,
+                ..
+            } => Ok(values
+                .into_iter()
+                .map(|row| {
+                    row.into_iter()
+                        .map(|f| {
+                            FractionEnum::Exact(FractionExact::to_exact((f, denominator.clone())))
+                        })
+                        .collect()
+                })
+                .collect()),
+            FractionMatrixEnum::BigInt {
+                values,
+                denominator,
+                ..
+            } => Ok(values
+                .into_iter()
+                .map(|row| {
+                    row.into_iter()
+                        .map(|f| {
+                            FractionEnum::Exact(FractionExact::to_exact((f, denominator.clone())))
+                        })
+                        .collect()
+                })
+                .collect()),
+            FractionMatrixEnum::CannotCombineExactAndApprox => {
+                Err(anyhow!("cannot combine exact and approximate arithmetic"))
+            }
+        }
+    }
+
     fn lowest_common_multiple_of_denominators(
         values: &Vec<Vec<fraction::BigFraction>>,
     ) -> Option<BigUint> {
@@ -218,6 +262,24 @@ impl EbiMatrix for FractionMatrixEnum {
     }
 }
 
+impl MaybeExact for FractionMatrixEnum {
+    type Approximate = ();
+
+    type Exact = FractionMatrixEnum;
+
+    fn is_exact(&self) -> bool {
+        true
+    }
+
+    fn extract_approx(&self) -> anyhow::Result<&Self::Approximate> {
+        Err(anyhow!("cannot extract a float from a fraction"))
+    }
+
+    fn extract_exact(&self) -> anyhow::Result<&Self::Exact> {
+        Ok(self)
+    }
+}
+
 impl From<Vec<Vec<FractionEnum>>> for FractionMatrixEnum {
     fn from(value: Vec<Vec<FractionEnum>>) -> Self {
         if let Some(x) = value.iter().next() {
@@ -294,24 +356,6 @@ impl From<Vec<Vec<FractionEnum>>> for FractionMatrixEnum {
     }
 }
 
-impl MaybeExact for FractionMatrixEnum {
-    type Approximate = ();
-
-    type Exact = FractionMatrixEnum;
-
-    fn is_exact(&self) -> bool {
-        true
-    }
-
-    fn extract_approx(&self) -> anyhow::Result<&Self::Approximate> {
-        Err(anyhow!("cannot extract a float from a fraction"))
-    }
-
-    fn extract_exact(&self) -> anyhow::Result<&Self::Exact> {
-        Ok(self)
-    }
-}
-
 #[cfg(test)]
 mod tests {
 
@@ -332,5 +376,21 @@ mod tests {
         let m2 = m1.clone().optimise();
 
         assert_eq!(m1, m2)
+    }
+
+    #[test]
+    fn fraction_matrix_reversible() {
+        let m1 = vec![vec![
+            FractionEnum::infinity(),
+            FractionEnum::neg_infinity(),
+            f_en!(8, 3),
+        ]];
+
+        let m2: FractionMatrixEnum = m1.clone().into();
+        let m2 = m2.optimise();
+
+        let m3 = m2.to_vec().unwrap();
+
+        assert_eq!(m1, m3);
     }
 }

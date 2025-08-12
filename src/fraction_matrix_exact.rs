@@ -47,6 +47,39 @@ impl FractionMatrixExact {
         }
     }
 
+    pub fn to_vec(self) -> Result<Vec<Vec<FractionExact>>> {
+        match self {
+            FractionMatrixExact::Fractions { values, .. } => Ok(values
+                .into_iter()
+                .map(|row| row.into_iter().map(|f| FractionExact(f)).collect())
+                .collect()),
+            FractionMatrixExact::I64 {
+                values,
+                denominator,
+                ..
+            } => Ok(values
+                .into_iter()
+                .map(|row| {
+                    row.into_iter()
+                        .map(|f| FractionExact::from((f, denominator.clone())))
+                        .collect()
+                })
+                .collect()),
+            FractionMatrixExact::BigInt {
+                values,
+                denominator,
+                ..
+            } => Ok(values
+                .into_iter()
+                .map(|row| {
+                    row.into_iter()
+                        .map(|f| FractionExact::from((f, denominator.clone())))
+                        .collect()
+                })
+                .collect()),
+        }
+    }
+
     fn lowest_common_multiple_of_denominators(
         values: &Vec<Vec<fraction::BigFraction>>,
     ) -> Option<BigUint> {
@@ -240,7 +273,8 @@ mod tests {
     use num_bigint::ToBigUint;
 
     use crate::{
-        ebi_matrix::EbiMatrix, f_e, fraction_exact::FractionExact, fraction_matrix_exact::FractionMatrixExact,
+        ebi_matrix::EbiMatrix, f_e, fraction_exact::FractionExact,
+        fraction_matrix_exact::FractionMatrixExact,
     };
 
     #[test]
@@ -269,5 +303,21 @@ mod tests {
         let m2 = m1.clone().optimise();
 
         assert_eq!(m1, m2)
+    }
+
+    #[test]
+    fn fraction_matrix_reversible() {
+        let m1 = vec![vec![
+            FractionExact::infinity(),
+            FractionExact::neg_infinity(),
+            f_e!(8, 3),
+        ]];
+
+        let m2: FractionMatrixExact = m1.clone().into();
+        let m2 = m2.optimise();
+
+        let m3 = m2.to_vec().unwrap();
+
+        assert_eq!(m1, m3);
     }
 }

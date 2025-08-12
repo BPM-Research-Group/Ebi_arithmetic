@@ -214,6 +214,37 @@ impl FromStr for FractionF64 {
     }
 }
 
+#[macro_export]
+/// Convenience short-hand macro to create fractions.
+macro_rules! f_a {
+    ($e: expr) => {
+        FractionF64::from($e)
+    };
+
+    ($e: expr, $f: expr) => {
+        FractionF64::from(($e, $f))
+    };
+}
+pub use f_a;
+
+#[macro_export]
+/// Convenience short-hand macro to create a fraction representing zero.
+macro_rules! f0_a {
+    () => {
+        FractionF64::zero()
+    };
+}
+pub use f0_a;
+
+#[macro_export]
+/// Convenience short-hand macro to create a fraction representing one.
+macro_rules! f1_a {
+    () => {
+        FractionF64::one()
+    };
+}
+pub use f1_a;
+
 impl Eq for FractionF64 {}
 
 impl PartialOrd for FractionF64 {
