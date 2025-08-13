@@ -1,7 +1,8 @@
 use crate::exact::MaybeExact;
+use anyhow::Result;
 
 pub trait EbiMatrix: Clone + MaybeExact {
-    /// Creates a new matrix with no rows and the given number of columns.
+    /// Creates a new reduced matrix with no rows and the given number of columns.
     fn new(number_of_columns: usize) -> Self;
 
     /// Returns the number of rows
@@ -10,10 +11,11 @@ pub trait EbiMatrix: Clone + MaybeExact {
     /// Returns the number of columns
     fn number_of_columns(&self) -> usize;
 
-    /// Optimises the matrix for repeated operations.
-    /// This may be a costly one-time call, but has the potential to make subsequent operations much more efficient.
+    /// Reduces all fractions in the matrix, and stores them more compactly if possible.
+    /// This may be a costly call, but has the potential to make subsequent operations more efficient.
     ///
-    /// For exact numbers, this will extract the lowest common multiple of the denominators, such that only the nominators need to be stored.
-    /// Has foreseeably no effect on approximate arithmetic.
-    fn optimise(self) -> Self;
+    /// Has forseeably no effect on approximate arithmetic.
+    fn reduce(self) -> Self;
+
+    fn invert(&mut self) -> Result<()>;
 }

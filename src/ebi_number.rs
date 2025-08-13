@@ -1,4 +1,4 @@
-pub trait EbiNumber: Zero + One + Infinite + Normal + Round {}
+pub trait EbiNumber: Zero + One + Infinite + Normal + Round + Clone {}
 
 pub trait Zero: Sized {
     fn zero() -> Self;
@@ -75,4 +75,9 @@ pub trait Round: Sized {
 
     /// Returns the smallest integer greater than or equal to `self`.
     fn ceil(self) -> Self;
+}
+
+pub trait Fractional: Sized {
+    /// Takes the reciprocal (inverse) of a number, `1/x`.
+    fn recip(&self) -> Self;
 }

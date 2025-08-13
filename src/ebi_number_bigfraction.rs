@@ -1,6 +1,6 @@
 use fraction::BigFraction;
 
-use crate::ebi_number::{EbiNumber, Infinite, Normal, One, Round, Signed, Zero};
+use crate::ebi_number::{EbiNumber, Fractional, Infinite, Normal, One, Round, Signed, Zero};
 
 impl EbiNumber for BigFraction {}
 
@@ -57,5 +57,11 @@ impl Round for BigFraction {
 
     fn ceil(self) -> Self {
         BigFraction::ceil(&self)
+    }
+}
+
+impl Fractional for BigFraction {
+    fn recip(&self) -> Self {
+        BigFraction::recip(&self)
     }
 }

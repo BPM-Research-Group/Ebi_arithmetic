@@ -24,7 +24,7 @@ mod tests {
     fn fraction_matrix() {
         let m: FractionMatrix = vec![vec![f!(1, 4), f!(2, 5), f!(8, 3)]].into();
 
-        let _ = m.optimise();
+        let _ = m.reduce();
     }
 
     #[test]
@@ -35,7 +35,7 @@ mod tests {
             f!(8, 3),
         ]];
         let m: FractionMatrix = m.into();
-        let _ = m.optimise();
+        let _ = m.reduce();
     }
 
     #[test]
@@ -44,7 +44,7 @@ mod tests {
         let m: FractionMatrix = m.into();
         assert_eq!(m.number_of_rows(), 1);
         assert_eq!(m.number_of_columns(), 0);
-        let _ = m.optimise();
+        let _ = m.reduce();
     }
 
     #[test]

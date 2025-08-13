@@ -1,7 +1,7 @@
 use num::Float;
 
 use crate::{
-    ebi_number::{EbiNumber, Infinite, Normal, One, Round, Signed, Zero},
+    ebi_number::{EbiNumber, Fractional, Infinite, Normal, One, Round, Signed, Zero},
     fraction::EPSILON,
 };
 
@@ -70,6 +70,12 @@ macro_rules! float {
 
             fn ceil(self) -> $t {
                 $t::ceil(self)
+            }
+        }
+
+        impl Fractional for $t {
+            fn recip(&self) -> Self {
+                $t::recip(*self)
             }
         }
     };

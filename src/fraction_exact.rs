@@ -265,6 +265,30 @@ impl ToExact<(i64, BigUint)> for FractionExact {
     }
 }
 
+impl ToExact<(Type, u64, u64)> for FractionExact {
+    fn to_exact(value: (Type, u64, u64)) -> fraction::BigFraction {
+        match value.0 {
+            Type::Plus => GenericFraction::Rational(
+                Sign::Plus,
+                Ratio::new(value.1.to_biguint().unwrap(), value.2.to_biguint().unwrap()),
+            ),
+            Type::Minus => GenericFraction::Rational(
+                Sign::Minus,
+                Ratio::new(value.1.to_biguint().unwrap(), value.2.to_biguint().unwrap()),
+            ),
+            Type::NaN => GenericFraction::NaN,
+            Type::Infinite => GenericFraction::Infinity(Sign::Plus),
+            Type::NegInfinite => GenericFraction::Infinity(Sign::Minus),
+        }
+    }
+}
+
+impl From<(Type, u64, u64)> for FractionExact {
+    fn from(value: (Type, u64, u64)) -> Self {
+        Self(Self::to_exact(value))
+    }
+}
+
 impl From<(BigInt, BigUint)> for FractionExact {
     fn from(value: (BigInt, BigUint)) -> Self {
         Self(Self::to_exact(value))
@@ -281,6 +305,24 @@ impl ToExact<(BigInt, BigUint)> for FractionExact {
             //negative
             let num = value.0.abs().to_biguint().unwrap();
             GenericFraction::Rational(Sign::Plus, Ratio::new(num, value.1))
+        }
+    }
+}
+
+impl From<(Type, BigUint, BigUint)> for FractionExact {
+    fn from(value: (Type, BigUint, BigUint)) -> Self {
+        Self(Self::to_exact(value))
+    }
+}
+
+impl ToExact<(Type, BigUint, BigUint)> for FractionExact {
+    fn to_exact(value: (Type, BigUint, BigUint)) -> fraction::BigFraction {
+        match value.0 {
+            Type::Plus => GenericFraction::Rational(Sign::Plus, Ratio::new(value.1, value.2)),
+            Type::Minus => GenericFraction::Rational(Sign::Minus, Ratio::new(value.1, value.2)),
+            Type::NaN => GenericFraction::NaN,
+            Type::Infinite => GenericFraction::Infinity(Sign::Plus),
+            Type::NegInfinite => GenericFraction::Infinity(Sign::Minus),
         }
     }
 }
@@ -825,6 +867,27 @@ ttype_signed!(i64);
 ttype_signed!(i32);
 ttype_signed!(i16);
 ttype_signed!(i8);
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Type {
+    Plus,
+    Minus,
+    NaN,
+    Infinite,
+    NegInfinite,
+}
+
+impl Type {
+    pub fn sign(&self) -> Sign {
+        match self {
+            Type::Plus => Sign::Plus,
+            Type::Minus => Sign::Minus,
+            Type::NaN => Sign::Plus,
+            Type::Infinite => Sign::Plus,
+            Type::NegInfinite => Sign::Minus,
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {

@@ -1,4 +1,6 @@
-use crate::{ebi_matrix::EbiMatrix, exact::MaybeExact, fraction_f64::FractionF64};
+use crate::{
+    ebi_matrix::EbiMatrix, exact::MaybeExact, fraction_f64::FractionF64, inversion::invert,
+};
 use anyhow::{Result, anyhow};
 
 #[derive(Clone)]
@@ -39,8 +41,12 @@ impl EbiMatrix for FractionMatrixF64 {
         self.number_of_columns
     }
 
-    fn optimise(self) -> Self {
+    fn reduce(self) -> Self {
         self
+    }
+
+    fn invert(&mut self) -> Result<()> {
+        invert(&mut self.number_of_columns, &mut self.values)
     }
 }
 
@@ -94,7 +100,7 @@ mod tests {
         ]];
 
         let m2: FractionMatrixF64 = m1.clone().into();
-        let m2 = m2.optimise();
+        let m2 = m2.reduce();
 
         let m3 = m2.to_vec().unwrap();
 
