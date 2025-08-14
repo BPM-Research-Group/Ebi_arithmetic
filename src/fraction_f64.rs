@@ -164,6 +164,15 @@ impl Default for FractionF64 {
 
 impl PartialEq for FractionF64 {
     fn eq(&self, other: &Self) -> bool {
+        if self.is_nan() && other.is_nan() {
+            return true;
+        }
+        if self.is_positive_infinite() && other.is_positive_infinite() {
+            return true;
+        }
+        if self.is_negative_infinite() && other.is_negative_infinite() {
+            return true;
+        }
         match (self, other) {
             (FractionF64(l0), FractionF64(r0)) => l0 - EPSILON <= *r0 && *r0 <= l0 + EPSILON,
         }

@@ -15,4 +15,14 @@ pub trait EbiMatrix: Clone + MaybeExact {
     ///
     /// Has forseeably no effect on approximate arithmetic.
     fn reduce(self) -> Self;
+
+    /// Tests for equivalence.
+    /// Reduces both matrices first, so may be an expensive operation.
+    fn eq(&mut self, other: &mut Self) -> bool;
+
+    /// Tests for internal equivalence.
+    /// Returns true if both matrices are internally the same.
+    ///
+    /// use `eq` to test for numerical equivalence.
+    fn inner_eq(&self, other: &Self) -> bool;
 }

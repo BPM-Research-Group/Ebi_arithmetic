@@ -1,7 +1,7 @@
 use std::ops::{Add, Mul};
 
-use fraction::Sign;
-use num::BigUint;
+use fraction::{GenericFraction, Sign};
+use num::{BigUint, Integer};
 
 ///A loose fraction is a sign, numerator and denominator. It is not necessary reduced.
 pub trait LooseFraction<T, U> {
@@ -157,7 +157,6 @@ macro_rules! aam {
                     }
                 } else {
                     //one of the numbers is non-negative; the other is non-positive
-                    println!("\t mixed bag 1");
 
                     //compute the product
                     let num_prod = num_b * num_c;
@@ -238,6 +237,18 @@ impl Type {
             Type::NaN => false,
             Type::Infinite => false,
             Type::NegInfinite => false,
+        }
+    }
+}
+
+impl<T: Clone + Integer> From<&GenericFraction<T>> for Type {
+    fn from(value: &GenericFraction<T>) -> Self {
+        match value {
+            fraction::GenericFraction::Rational(Sign::Plus, _) => Type::Plus,
+            fraction::GenericFraction::Rational(Sign::Minus, _) => Type::Minus,
+            fraction::GenericFraction::Infinity(Sign::Plus) => Type::Infinite,
+            fraction::GenericFraction::Infinity(Sign::Minus) => Type::NegInfinite,
+            fraction::GenericFraction::NaN => Type::NaN,
         }
     }
 }

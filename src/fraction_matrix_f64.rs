@@ -1,15 +1,15 @@
 use crate::{ebi_matrix::EbiMatrix, exact::MaybeExact, fraction_f64::FractionF64};
-use anyhow::{Result, anyhow};
+use anyhow::{Error, Result, anyhow};
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct FractionMatrixF64 {
-    values: Vec<Vec<f64>>,
-    number_of_columns: usize,
+    pub(crate) values: Vec<Vec<f64>>,
+    pub(crate) number_of_columns: usize,
 }
 
 impl FractionMatrixF64 {
     /// Obtains an element from the matrix.
-    /// This may be an expensive operation.
+    /// This may be an expensive operation depending on the compile mode.
     pub fn get(&self, row: usize, column: usize) -> FractionF64 {
         FractionF64(self.values[row][column])
     }
@@ -42,22 +42,43 @@ impl EbiMatrix for FractionMatrixF64 {
     fn reduce(self) -> Self {
         self
     }
+
+    fn eq(&mut self, other: &mut Self) -> bool {
+        self == other
+    }
+
+    fn inner_eq(&self, other: &Self) -> bool {
+        self == other
+    }
 }
 
-impl From<Vec<Vec<FractionF64>>> for FractionMatrixF64 {
-    fn from(values: Vec<Vec<FractionF64>>) -> Self {
+impl TryFrom<Vec<Vec<FractionF64>>> for FractionMatrixF64 {
+    type Error = Error;
+    fn try_from(values: Vec<Vec<FractionF64>>) -> Result<Self> {
         let number_of_columns = if let Some(x) = values.iter().next() {
             x.len()
         } else {
             0
         };
-        Self {
-            values: values
-                .into_iter()
-                .map(|row| row.into_iter().map(|f| f.0).collect())
-                .collect(),
-            number_of_columns,
+
+        let mut new_values = Vec::with_capacity(values.len());
+        for row in values {
+            if row.len() != number_of_columns {
+                return Err(anyhow!("number of columns is not consistent"));
+            }
+
+            let mut new_row = Vec::with_capacity(number_of_columns);
+            for v in row {
+                new_row.push(v.0);
+            }
+
+            new_values.push(new_row);
         }
+
+        Ok(Self {
+            values: new_values,
+            number_of_columns,
+        })
     }
 }
 
@@ -93,7 +114,7 @@ mod tests {
             f_a!(8, 3),
         ]];
 
-        let m2: FractionMatrixF64 = m1.clone().into();
+        let m2: FractionMatrixF64 = m1.clone().try_into().unwrap();
         let m2 = m2.reduce();
 
         let m3 = m2.to_vec().unwrap();

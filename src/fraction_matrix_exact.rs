@@ -1,20 +1,16 @@
 use std::{
-    ops::Mul,
+    mem,
     sync::atomic::{AtomicBool, Ordering},
 };
 
-use anyhow::{Result, anyhow};
-use fraction::{Sign, ToPrimitive};
-use itertools::iproduct;
+use anyhow::{Error, Result, anyhow};
+use fraction::ToPrimitive;
 use num::{BigUint, Zero, integer::gcd};
 use num_bigint::ToBigUint;
 
 use crate::{
-    ebi_matrix::EbiMatrix,
-    ebi_number::One,
-    exact::MaybeExact,
-    fraction_exact::FractionExact,
-    loose_fraction::{self, LooseFraction, Type},
+    ebi_matrix::EbiMatrix, ebi_number::One, exact::MaybeExact, fraction_exact::FractionExact,
+    loose_fraction::Type,
 };
 
 #[derive(Clone, Debug)]
@@ -102,51 +98,6 @@ impl FractionMatrixExact {
                 })
                 .collect(),
         })
-    }
-
-    #[cfg(test)]
-    fn inner_eq(&self, rhs: &Self) -> bool {
-        match (self, rhs) {
-            (
-                FractionMatrixExact::U64 {
-                    number_of_columns,
-                    types,
-                    numerators,
-                    denominators,
-                },
-                FractionMatrixExact::U64 {
-                    number_of_columns: number_of_columns2,
-                    types: types2,
-                    numerators: numerators2,
-                    denominators: denominators2,
-                },
-            ) => {
-                number_of_columns == number_of_columns2
-                    && types == types2
-                    && numerators == numerators2
-                    && denominators == denominators2
-            }
-            (
-                FractionMatrixExact::BigInt {
-                    number_of_columns,
-                    types,
-                    numerators,
-                    denominators,
-                },
-                FractionMatrixExact::BigInt {
-                    number_of_columns: number_of_columns2,
-                    types: types2,
-                    numerators: numerators2,
-                    denominators: denominators2,
-                },
-            ) => {
-                number_of_columns == number_of_columns2
-                    && types == types2
-                    && numerators == numerators2
-                    && denominators == denominators2
-            }
-            _ => false,
-        }
     }
 }
 
@@ -301,28 +252,83 @@ impl EbiMatrix for FractionMatrixExact {
             }
         }
     }
+
+    fn eq(&mut self, other: &mut Self) -> bool {
+        let mut s = self.clone().reduce();
+
+        let mut o = other.clone().reduce();
+
+        mem::swap(&mut o, other);
+        mem::swap(&mut s, self);
+
+        self.inner_eq(&other)
+    }
+
+    fn inner_eq(&self, rhs: &Self) -> bool {
+        match (self, rhs) {
+            (
+                FractionMatrixExact::U64 {
+                    number_of_columns,
+                    types,
+                    numerators,
+                    denominators,
+                },
+                FractionMatrixExact::U64 {
+                    number_of_columns: number_of_columns2,
+                    types: types2,
+                    numerators: numerators2,
+                    denominators: denominators2,
+                },
+            ) => {
+                number_of_columns == number_of_columns2
+                    && types == types2
+                    && numerators == numerators2
+                    && denominators == denominators2
+            }
+            (
+                FractionMatrixExact::BigInt {
+                    number_of_columns,
+                    types,
+                    numerators,
+                    denominators,
+                },
+                FractionMatrixExact::BigInt {
+                    number_of_columns: number_of_columns2,
+                    types: types2,
+                    numerators: numerators2,
+                    denominators: denominators2,
+                },
+            ) => {
+                number_of_columns == number_of_columns2
+                    && types == types2
+                    && numerators == numerators2
+                    && denominators == denominators2
+            }
+            _ => false,
+        }
+    }
 }
 
-impl From<Vec<Vec<FractionExact>>> for FractionMatrixExact {
-    fn from(value: Vec<Vec<FractionExact>>) -> Self {
+impl TryFrom<Vec<Vec<FractionExact>>> for FractionMatrixExact {
+    type Error = Error;
+
+    fn try_from(value: Vec<Vec<FractionExact>>) -> Result<Self> {
         if let Some(x) = value.iter().next() {
             let number_of_columns = x.len();
             //has rows
 
-            let types = value
-                .iter()
-                .map(|row| {
-                    row.iter()
-                        .map(|v| match &v.0 {
-                            fraction::GenericFraction::Rational(Sign::Plus, _) => Type::Plus,
-                            fraction::GenericFraction::Rational(Sign::Minus, _) => Type::Minus,
-                            fraction::GenericFraction::Infinity(Sign::Plus) => Type::Infinite,
-                            fraction::GenericFraction::Infinity(Sign::Minus) => Type::NegInfinite,
-                            fraction::GenericFraction::NaN => Type::NaN,
-                        })
-                        .collect()
-                })
-                .collect();
+            let mut types = Vec::with_capacity(value.len());
+            for row in value.iter() {
+                if row.len() != number_of_columns {
+                    return Err(anyhow!("number of columns is not consistent"));
+                }
+
+                let mut new_row = Vec::with_capacity(number_of_columns);
+                for v in row {
+                    new_row.push((&v.0).into());
+                }
+                types.push(new_row);
+            }
 
             let numerators = value
                 .iter()
@@ -348,20 +354,20 @@ impl From<Vec<Vec<FractionExact>>> for FractionMatrixExact {
                 })
                 .collect::<Vec<_>>();
 
-            Self::BigInt {
+            Ok(Self::BigInt {
                 number_of_columns,
                 types,
                 numerators,
                 denominators,
-            }
+            })
         } else {
             //no rows
-            Self::BigInt {
+            Ok(Self::BigInt {
                 number_of_columns: 0,
                 types: vec![],
                 numerators: vec![],
                 denominators: vec![],
-            }
+            })
         }
     }
 }
@@ -384,275 +390,20 @@ impl MaybeExact for FractionMatrixExact {
     }
 }
 
-impl Mul for &FractionMatrixExact {
-    type Output = Result<FractionMatrixExact>;
-
-    fn mul(self, rhs: Self) -> Self::Output {
-        if self.number_of_columns() != rhs.number_of_rows() {
-            return Err(anyhow!(
-                "cannot multiply matrix of size {}x{} with a matrix of size {}x{}",
-                self.number_of_rows(),
-                self.number_of_columns(),
-                rhs.number_of_rows(),
-                rhs.number_of_columns()
-            ));
-        }
-
-        match (self, rhs) {
-            (
-                FractionMatrixExact::U64 {
-                    types,
-                    numerators,
-                    denominators,
-                    ..
-                },
-                FractionMatrixExact::U64 {
-                    types: types2,
-                    numerators: numerators2,
-                    denominators: denominators2,
-                    ..
-                },
-            ) => {
-                let n = self.number_of_rows();
-                let m = self.number_of_columns();
-                let p = rhs.number_of_columns();
-                let mut new_types = vec![vec![Type::Plus; p]; n];
-                let mut new_num = vec![vec![0; p]; n];
-                let mut new_den = vec![vec![1; p]; n];
-
-                let mut last_attempted = None;
-                'outer: for i in 0..n {
-                    for j in 0..p {
-                        for k in 0..m {
-                            if loose_fraction::checked_add_assign_mul(
-                                &mut new_types[i][j],
-                                &mut new_num[i][j],
-                                &mut new_den[i][j],
-                                types[i][k],
-                                &numerators[i][k],
-                                &denominators[i][k],
-                                types2[k][j],
-                                &numerators2[k][j],
-                                &denominators2[k][j],
-                            ) {
-                                //no overlflow; continue
-                            } else {
-                                //overflow
-                                println!("overflow detected at {} {}", i, j);
-
-                                new_types[i][j] = Type::Plus;
-                                last_attempted = Some((i, j));
-                                break 'outer;
-                            }
-                        }
-                    }
-                }
-
-                if let Some((r, c)) = last_attempted {
-                    //overflow occurred, salvage results and finish it as a larger data type
-                    let mut new_new_num = vec![vec![BigUint::zero(); p]; n];
-                    let mut new_new_den = vec![vec![BigUint::one(); p]; n];
-
-                    //first copy the already obtained results to the larger data type
-                    iproduct!(0..n, 0..p).take(r * n + c).for_each(|(i, j)| {
-                        println!(
-                            "salvage {} {} being {}/{}",
-                            i, j, new_num[i][j], new_den[i][j]
-                        );
-                        new_new_num[i][j] = new_num[i][j].to_biguint().unwrap();
-                        new_new_den[i][j] = new_den[i][j].to_biguint().unwrap();
-                    });
-
-                    //second, finish the multiplication on the larger data type
-                    iproduct!(0..n, 0..p).skip(r * n + c).for_each(|(i, j)| {
-                        println!("compute {} {}", i, j);
-                        for k in 0..m {
-                            BigUint::add_assign_mul(
-                                &mut new_types[i][j],
-                                &mut new_new_num[i][j],
-                                &mut new_new_den[i][j],
-                                types[i][k],
-                                &numerators[i][k].to_biguint().unwrap(),
-                                &denominators[i][k].to_biguint().unwrap(),
-                                types2[k][j],
-                                &numerators2[k][j],
-                                &denominators2[k][j],
-                            )
-                        }
-                    });
-
-                    Ok(FractionMatrixExact::BigInt {
-                        number_of_columns: n,
-                        types: new_types,
-                        numerators: new_new_num,
-                        denominators: new_new_den,
-                    })
-                } else {
-                    //completed normally
-                    Ok(FractionMatrixExact::U64 {
-                        number_of_columns: n,
-                        types: new_types,
-                        numerators: new_num,
-                        denominators: new_den,
-                    })
-                }
-            }
-            (
-                FractionMatrixExact::U64 {
-                    types,
-                    numerators,
-                    denominators,
-                    ..
-                },
-                FractionMatrixExact::BigInt {
-                    types: types2,
-                    numerators: numerators2,
-                    denominators: denominators2,
-                    ..
-                },
-            ) => {
-                let n = self.number_of_rows();
-                let m = self.number_of_columns();
-                let p = rhs.number_of_columns();
-                let mut new_types = vec![vec![Type::Plus; p]; n];
-                let mut new_num = vec![vec![BigUint::zero(); p]; n];
-                let mut new_den = vec![vec![BigUint::one(); p]; n];
-
-                iproduct!(0..n, 0..p).for_each(|(i, j)| {
-                    for k in 0..m {
-                        BigUint::add_assign_mul(
-                            &mut new_types[i][j],
-                            &mut new_num[i][j],
-                            &mut new_den[i][j],
-                            types[i][k],
-                            &numerators[i][k],
-                            &denominators[i][k],
-                            types2[k][j],
-                            &numerators2[k][j],
-                            &denominators2[k][j],
-                        );
-                    }
-                });
-
-                Ok(FractionMatrixExact::BigInt {
-                    number_of_columns: n,
-                    types: new_types,
-                    numerators: new_num,
-                    denominators: new_den,
-                })
-            }
-            (
-                FractionMatrixExact::BigInt {
-                    types,
-                    numerators,
-                    denominators,
-                    ..
-                },
-                FractionMatrixExact::U64 {
-                    types: types2,
-                    numerators: numerators2,
-                    denominators: denominators2,
-                    ..
-                },
-            ) => {
-                let n = self.number_of_rows();
-                let m = self.number_of_columns();
-                let p = rhs.number_of_columns();
-                let mut new_types = vec![vec![Type::Plus; p]; n];
-                let mut new_num = vec![vec![BigUint::zero(); p]; n];
-                let mut new_den = vec![vec![BigUint::one(); p]; n];
-
-                iproduct!(0..n, 0..p).for_each(|(i, j)| {
-                    for k in 0..m {
-                        BigUint::add_assign_mul(
-                            &mut new_types[i][j],
-                            &mut new_num[i][j],
-                            &mut new_den[i][j],
-                            types[i][k],
-                            &numerators[i][k],
-                            &denominators[i][k],
-                            types2[k][j],
-                            &numerators2[k][j],
-                            &denominators2[k][j],
-                        );
-                    }
-                });
-
-                Ok(FractionMatrixExact::BigInt {
-                    number_of_columns: n,
-                    types: new_types,
-                    numerators: new_num,
-                    denominators: new_den,
-                })
-            }
-            (
-                FractionMatrixExact::BigInt {
-                    types,
-                    numerators,
-                    denominators,
-                    ..
-                },
-                FractionMatrixExact::BigInt {
-                    types: types2,
-                    numerators: numerators2,
-                    denominators: denominators2,
-                    ..
-                },
-            ) => {
-                let n = self.number_of_rows();
-                let m = self.number_of_columns();
-                let p = rhs.number_of_columns();
-                let mut new_types = vec![vec![Type::Plus; p]; n];
-                let mut new_num = vec![vec![BigUint::zero(); p]; n];
-                let mut new_den = vec![vec![BigUint::one(); p]; n];
-
-                iproduct!(0..n, 0..p).for_each(|(i, j)| {
-                    for k in 0..m {
-                        println!("add_assign_mul {} {} {}", i, j, k);
-
-                        BigUint::add_assign_mul(
-                            &mut new_types[i][j],
-                            &mut new_num[i][j],
-                            &mut new_den[i][j],
-                            types[i][k],
-                            &numerators[i][k],
-                            &denominators[i][k],
-                            types2[k][j],
-                            &numerators2[k][j],
-                            &denominators2[k][j],
-                        );
-                    }
-                });
-
-                Ok(FractionMatrixExact::BigInt {
-                    number_of_columns: n,
-                    types: new_types,
-                    numerators: new_num,
-                    denominators: new_den,
-                })
-            }
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
 
     use crate::{
-        ebi_matrix::EbiMatrix,
-        ebi_number::{One, Zero},
-        f_e, f0_e, f1_e,
-        fraction_exact::FractionExact,
-        fraction_matrix_exact::FractionMatrixExact,
-        loose_fraction::Type,
+        ebi_matrix::EbiMatrix, f_e, fraction_exact::FractionExact,
+        fraction_matrix_exact::FractionMatrixExact, loose_fraction::Type,
     };
 
     #[test]
     fn fraction_matrix() {
-        let m1: FractionMatrixExact = vec![vec![f_e!(1, 4), f_e!(2, 5), f_e!(8, 3)]].into();
+        let m1: FractionMatrixExact = vec![vec![f_e!(1, 4), f_e!(2, 5), f_e!(8, 3)]]
+            .try_into()
+            .unwrap();
         let m2 = m1.clone().reduce();
-
-        println!("{:?}", m2);
 
         if let FractionMatrixExact::U64 { .. } = m2 {
         } else {
@@ -676,7 +427,8 @@ mod tests {
             FractionExact::neg_infinity(),
             f_e!(8, 3),
         ]]
-        .into();
+        .try_into()
+        .unwrap();
         let m2 = m1.clone().reduce();
 
         let m3 = FractionMatrixExact::U64 {
@@ -697,208 +449,11 @@ mod tests {
             f_e!(8, 3),
         ]];
 
-        let m2: FractionMatrixExact = m1.clone().into();
+        let m2: FractionMatrixExact = m1.clone().try_into().unwrap();
         let m2 = m2.reduce();
 
         let m3 = m2.to_vec().unwrap();
 
         assert_eq!(m1, m3);
-    }
-
-    #[test]
-    fn fraction_matrix_mul() {
-        let m1: FractionMatrixExact = vec![
-            vec![f_e!(1), f_e!(2), f_e!(3)],
-            vec![f_e!(4), f_e!(5), f_e!(6)],
-        ]
-        .into();
-
-        (&m1 * &m1).unwrap_err();
-
-        let m2: FractionMatrixExact = vec![
-            vec![f_e!(7), f_e!(8)],
-            vec![f_e!(9), f_e!(10)],
-            vec![f_e!(11), f_e!(12)],
-        ]
-        .into();
-
-        (&m2 * &m2).unwrap_err();
-
-        let prod = (&m1 * &m2).unwrap();
-
-        println!("{:?}", prod);
-
-        assert_eq!(prod.number_of_columns(), 2);
-        assert_eq!(prod.number_of_rows(), 2);
-
-        let m3 = vec![vec![f_e!(58), f_e!(64)], vec![f_e!(139), f_e!(154)]];
-
-        assert_eq!(prod.clone().to_vec().unwrap(), m3);
-
-        let m2 = m2.reduce();
-
-        let prod = (&m1 * &m2).unwrap();
-        println!("{:?}", prod);
-        assert_eq!(prod.to_vec().unwrap(), m3);
-
-        let m1 = m1.reduce();
-
-        let prod = (&m1 * &m2).unwrap();
-        println!("{:?}", prod);
-        assert_eq!(prod.to_vec().unwrap(), m3);
-    }
-
-    #[test]
-    fn fraction_matrix_mul_nan() {
-        let m1 = vec![vec![
-            FractionExact::infinity(),
-            FractionExact::neg_infinity(),
-            f_e!(-8, 3),
-        ]];
-        let m1: FractionMatrixExact = m1.into();
-
-        (&m1 * &m1).unwrap_err();
-
-        let m2: FractionMatrixExact = vec![vec![f0_e!()], vec![f1_e!()], vec![f_e!(-8, 3)]].into();
-
-        (&m2 * &m2).unwrap_err();
-
-        let prod = (&m1 * &m2).unwrap();
-
-        assert_eq!(prod.number_of_columns(), 1);
-        assert_eq!(prod.number_of_rows(), 1);
-
-        println!("{:?}", prod);
-
-        let m3 = vec![vec![FractionExact::nan()]];
-
-        assert_eq!(prod.clone().to_vec().unwrap(), m3);
-    }
-
-    #[test]
-    fn fraction_matrix_mul_overflow_1() {
-        let m1: FractionMatrixExact = vec![
-            vec![f_e!(u64::MAX), f_e!(2), f_e!(3)],
-            vec![f_e!(4), f_e!(5), f_e!(6)],
-        ]
-        .into();
-        let m1 = m1.reduce();
-        println!("m1 {:?}", m1);
-
-        let m2: FractionMatrixExact = vec![
-            vec![f_e!(u64::MAX), f_e!(8)],
-            vec![f_e!(9), f_e!(10)],
-            vec![f_e!(11), f_e!(12)],
-        ]
-        .into();
-        let m2 = m2.reduce();
-        println!("m2 {:?}", m2);
-
-        let prod = (&m1 * &m2).unwrap();
-
-        let m3 = vec![
-            [
-                "340282366920938463426481119284349108276".parse().unwrap(),
-                "147573952589676412976".parse().unwrap(),
-            ],
-            ["73786976294838206571".parse().unwrap(), f_e!(154)],
-        ];
-
-        assert_eq!(prod.to_vec().unwrap(), m3);
-    }
-
-    #[test]
-    fn fraction_matrix_mul_overflow_2() {
-        let m1: FractionMatrixExact = vec![
-            vec![f_e!(u64::MAX), f_e!(2), f_e!(3)],
-            vec![f_e!(4), f_e!(5), f_e!(6)],
-        ]
-        .into();
-        let m1 = m1.reduce();
-        println!("m1 {:?}", m1);
-
-        let m2: FractionMatrixExact = vec![
-            vec![f_e!(1), f_e!(8)],
-            vec![f_e!(9), f_e!(10)],
-            vec![f_e!(11), f_e!(12)],
-        ]
-        .into();
-        let m2 = m2.reduce();
-        println!("m2 {:?}", m2);
-
-        let prod = (&m1 * &m2).unwrap();
-
-        let m3 = vec![
-            [
-                "18446744073709551666".parse().unwrap(),
-                "147573952589676412976".parse().unwrap(),
-            ],
-            [f_e!(115), f_e!(154)],
-        ];
-
-        assert_eq!(prod.to_vec().unwrap(), m3);
-    }
-
-    #[test]
-    fn fraction_matrix_mul_overflow_3() {
-        let m1: FractionMatrixExact = vec![
-            vec![-f_e!(u64::MAX), f_e!(2), f_e!(3)],
-            vec![f_e!(4), f_e!(5), f_e!(6)],
-        ]
-        .into();
-        let m1 = m1.reduce();
-        println!("m1 {:?}", m1);
-
-        let m2: FractionMatrixExact = vec![
-            vec![f_e!(1), f_e!(8)],
-            vec![f_e!(9), f_e!(10)],
-            vec![f_e!(11), f_e!(12)],
-        ]
-        .into();
-        let m2 = m2.reduce();
-        println!("m2 {:?}", m2);
-
-        let prod = (&m1 * &m2).unwrap();
-
-        let m3 = vec![
-            [
-                "-18446744073709551564".parse().unwrap(),
-                "-147573952589676412864".parse().unwrap(),
-            ],
-            [f_e!(115), f_e!(154)],
-        ];
-
-        assert_eq!(prod.to_vec().unwrap(), m3);
-    }
-
-    #[test]
-    fn fraction_matrix_mul_overflow_4() {
-        let m1: FractionMatrixExact = vec![
-            vec![-f_e!(u64::MAX), f_e!(2), f_e!(3)],
-            vec![f_e!(4), f_e!(5), f_e!(6)],
-        ]
-        .into();
-        // let m1 = m1.reduce();
-
-        let m2: FractionMatrixExact = vec![
-            vec![f_e!(u64::MAX), f_e!(8)],
-            vec![f_e!(9), f_e!(10)],
-            vec![f_e!(11), f_e!(12)],
-        ]
-        .into();
-        let m2 = m2.reduce();
-
-        let prod = (&m1 * &m2).unwrap();
-        println!("prod {:?}", prod);
-
-        let m3 = vec![
-            vec![
-                "-340282366920938463426481119284349108174".parse().unwrap(),
-                "-147573952589676412864".parse().unwrap(),
-            ],
-            vec!["73786976294838206571".parse().unwrap(), f_e!(154)],
-        ];
-
-        assert_eq!(prod.to_vec().unwrap(), m3);
     }
 }

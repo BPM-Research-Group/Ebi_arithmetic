@@ -1,39 +1,19 @@
-use std::sync::atomic::{AtomicBool, Ordering};
-
-use anyhow::{Result, anyhow};
-use fraction::{Sign, ToPrimitive};
-use num::{BigInt, BigUint, One, Zero};
-use num_bigint::ToBigInt;
-use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
+use anyhow::{Error, Result, anyhow};
 
 use crate::{
     ebi_matrix::EbiMatrix,
-    exact::{MaybeExact, is_exact_globally},
-    fraction::ToExact,
+    exact::{self, MaybeExact, is_exact_globally},
     fraction_enum::FractionEnum,
     fraction_exact::FractionExact,
+    fraction_f64::FractionF64,
+    fraction_matrix_exact::FractionMatrixExact,
+    fraction_matrix_f64::FractionMatrixF64,
 };
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Debug)]
 pub enum FractionMatrixEnum {
-    F64 {
-        number_of_columns: usize,
-        values: Vec<Vec<f64>>,
-    },
-    Fractions {
-        number_of_columns: usize,
-        values: Vec<Vec<fraction::BigFraction>>,
-    },
-    I64 {
-        number_of_columns: usize,
-        values: Vec<Vec<i64>>,
-        denominator: BigUint,
-    },
-    BigInt {
-        number_of_columns: usize,
-        values: Vec<Vec<BigInt>>,
-        denominator: BigUint,
-    },
+    Approx(FractionMatrixF64),
+    Exact(FractionMatrixExact),
     CannotCombineExactAndApprox,
 }
 
@@ -42,26 +22,8 @@ impl FractionMatrixEnum {
     /// This may be an expensive operation.
     pub fn get(&self, row: usize, column: usize) -> FractionEnum {
         match self {
-            FractionMatrixEnum::F64 { values, .. } => FractionEnum::Approx(values[row][column]),
-            FractionMatrixEnum::Fractions { values, .. } => {
-                FractionEnum::Exact(values[row][column].clone())
-            }
-            FractionMatrixEnum::I64 {
-                values,
-                denominator,
-                ..
-            } => FractionEnum::Exact(FractionExact::to_exact((
-                values[row][column],
-                denominator.clone(),
-            ))),
-            FractionMatrixEnum::BigInt {
-                values,
-                denominator,
-                ..
-            } => FractionEnum::Exact(FractionExact::to_exact((
-                values[row][column].clone(),
-                denominator.clone(),
-            ))),
+            FractionMatrixEnum::Approx(m) => FractionEnum::Approx(m.get(row, column).0),
+            FractionMatrixEnum::Exact(m) => FractionEnum::Exact(m.get(row, column).0),
             FractionMatrixEnum::CannotCombineExactAndApprox => {
                 FractionEnum::CannotCombineExactAndApprox
             }
@@ -70,195 +32,70 @@ impl FractionMatrixEnum {
 
     pub fn to_vec(self) -> Result<Vec<Vec<FractionEnum>>> {
         match self {
-            FractionMatrixEnum::F64 { values, .. } => Ok(values
+            FractionMatrixEnum::Approx(m) => Ok(m
+                .to_vec()?
                 .into_iter()
-                .map(|row| row.into_iter().map(|f| FractionEnum::Approx(f)).collect())
+                .map(|row| row.into_iter().map(|f| FractionEnum::Approx(f.0)).collect())
                 .collect()),
-            FractionMatrixEnum::Fractions { values, .. } => Ok(values
+            FractionMatrixEnum::Exact(m) => Ok(m
+                .to_vec()?
                 .into_iter()
-                .map(|row| row.into_iter().map(|f| FractionEnum::Exact(f)).collect())
-                .collect()),
-            FractionMatrixEnum::I64 {
-                values,
-                denominator,
-                ..
-            } => Ok(values
-                .into_iter()
-                .map(|row| {
-                    row.into_iter()
-                        .map(|f| {
-                            FractionEnum::Exact(FractionExact::to_exact((f, denominator.clone())))
-                        })
-                        .collect()
-                })
-                .collect()),
-            FractionMatrixEnum::BigInt {
-                values,
-                denominator,
-                ..
-            } => Ok(values
-                .into_iter()
-                .map(|row| {
-                    row.into_iter()
-                        .map(|f| {
-                            FractionEnum::Exact(FractionExact::to_exact((f, denominator.clone())))
-                        })
-                        .collect()
-                })
+                .map(|row| row.into_iter().map(|f| FractionEnum::Exact(f.0)).collect())
                 .collect()),
             FractionMatrixEnum::CannotCombineExactAndApprox => {
                 Err(anyhow!("cannot combine exact and approximate arithmetic"))
             }
         }
     }
-
-    fn lowest_common_multiple_of_denominators(
-        values: &Vec<Vec<fraction::BigFraction>>,
-    ) -> Option<BigUint> {
-        let normal = AtomicBool::new(true);
-        let denoms = values
-            .par_iter()
-            .flat_map(|row| {
-                row.par_iter().map(|value| {
-                    let x = value.denom(); //we are sure that the number is exact here, so the unwrap() should be safe.
-                    if let Some(x) = x {
-                        x.clone()
-                    } else {
-                        normal.store(false, Ordering::Relaxed);
-                        BigUint::zero()
-                    }
-                })
-            })
-            //denominators
-            .reduce(|| BigUint::one(), |a, b| num::integer::lcm(a, b));
-        if normal.load(Ordering::Relaxed) {
-            Some(denoms)
-        } else {
-            None
-        }
-    }
 }
 
 impl EbiMatrix for FractionMatrixEnum {
     fn new(number_of_columns: usize) -> Self {
-        Self::Fractions {
-            number_of_columns,
-            values: vec![],
+        if exact::is_exact_globally() {
+            Self::Exact(FractionMatrixExact::new(number_of_columns))
+        } else {
+            Self::Approx(FractionMatrixF64::new(number_of_columns))
         }
     }
 
     fn number_of_rows(&self) -> usize {
         match self {
-            FractionMatrixEnum::F64 { values, .. } => values.len(),
-            FractionMatrixEnum::Fractions { values, .. } => values.len(),
-            FractionMatrixEnum::I64 { values, .. } => values.len(),
-            FractionMatrixEnum::BigInt { values, .. } => values.len(),
+            FractionMatrixEnum::Approx(m) => m.number_of_rows(),
+            FractionMatrixEnum::Exact(m) => m.number_of_rows(),
             FractionMatrixEnum::CannotCombineExactAndApprox => 0,
         }
     }
 
     fn number_of_columns(&self) -> usize {
         match self {
-            FractionMatrixEnum::F64 {
-                number_of_columns, ..
-            }
-            | FractionMatrixEnum::Fractions {
-                number_of_columns, ..
-            }
-            | FractionMatrixEnum::I64 {
-                number_of_columns, ..
-            }
-            | FractionMatrixEnum::BigInt {
-                number_of_columns, ..
-            } => *number_of_columns,
+            FractionMatrixEnum::Approx(m) => m.number_of_columns(),
+            FractionMatrixEnum::Exact(m) => m.number_of_columns(),
             FractionMatrixEnum::CannotCombineExactAndApprox => 0,
         }
     }
 
     fn reduce(self) -> Self {
-        //try to transform fractions into BigInts
-        let result = if let FractionMatrixEnum::Fractions {
-            values,
-            number_of_columns,
-        } = self
-        {
-            //find the lowest common multiple
-            if let Some(lcm) = Self::lowest_common_multiple_of_denominators(&values) {
-                //there is a lowest common multiple => every number is normal
+        match self {
+            FractionMatrixEnum::Approx(m) => FractionMatrixEnum::Approx(m.reduce()),
+            FractionMatrixEnum::Exact(m) => FractionMatrixEnum::Exact(m.reduce()),
+            FractionMatrixEnum::CannotCombineExactAndApprox => self,
+        }
+    }
 
-                //transform to Vec<Vec<BigInt>>
-                let values = values
-                    .into_par_iter()
-                    .map(|row| {
-                        row.into_iter()
-                            .map(|cell| {
-                                let num = cell.numer().unwrap() * &lcm / cell.denom().unwrap();
-                                match cell.sign() {
-                                    Some(Sign::Plus) => num.to_bigint().unwrap(),
-                                    Some(Sign::Minus) => -num.to_bigint().unwrap(),
-                                    None => num.to_bigint().unwrap(),
-                                }
-                            })
-                            .collect::<Vec<_>>()
-                    })
-                    .collect::<Vec<_>>();
+    fn eq(&mut self, other: &mut Self) -> bool {
+        match (self, other) {
+            (FractionMatrixEnum::Approx(m1), FractionMatrixEnum::Approx(m2)) => m1.eq(m2),
+            (FractionMatrixEnum::Exact(m1), FractionMatrixEnum::Exact(m2)) => m1.eq(m2),
+            _ => false,
+        }
+    }
 
-                Self::BigInt {
-                    number_of_columns,
-                    values: values,
-                    denominator: lcm,
-                }
-            } else {
-                //there is no lowest common multiple; do nothing
-                Self::Fractions {
-                    number_of_columns,
-                    values,
-                }
-            }
-        } else {
-            self
-        };
-
-        //try to transform BigInts into i64s
-        let result2 = if let FractionMatrixEnum::BigInt {
-            number_of_columns,
-            values,
-            denominator,
-        } = result
-        {
-            let values2 = values
-                .iter()
-                .map(|row| {
-                    row.iter()
-                        .map(|cell| {
-                            if let Some(x) = cell.to_i64() {
-                                Ok(x)
-                            } else {
-                                Err(anyhow!("bla"))
-                            }
-                        })
-                        .collect::<Result<Vec<_>>>()
-                })
-                .collect::<Result<Vec<_>>>();
-
-            if let Ok(values2) = values2 {
-                Self::I64 {
-                    number_of_columns,
-                    values: values2,
-                    denominator,
-                }
-            } else {
-                Self::BigInt {
-                    number_of_columns,
-                    values,
-                    denominator,
-                }
-            }
-        } else {
-            result
-        };
-
-        result2
+    fn inner_eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (FractionMatrixEnum::Approx(m1), FractionMatrixEnum::Approx(m2)) => m1.inner_eq(m2),
+            (FractionMatrixEnum::Exact(m1), FractionMatrixEnum::Exact(m2)) => m1.inner_eq(m2),
+            _ => false,
+        }
     }
 }
 
@@ -271,86 +108,100 @@ impl MaybeExact for FractionMatrixEnum {
         true
     }
 
-    fn extract_approx(&self) -> anyhow::Result<&Self::Approximate> {
+    fn extract_approx(&self) -> anyhow::Result<&()> {
         Err(anyhow!("cannot extract a float from a fraction"))
     }
 
-    fn extract_exact(&self) -> anyhow::Result<&Self::Exact> {
+    fn extract_exact(&self) -> anyhow::Result<&FractionMatrixEnum> {
         Ok(self)
     }
 }
 
-impl From<Vec<Vec<FractionEnum>>> for FractionMatrixEnum {
-    fn from(value: Vec<Vec<FractionEnum>>) -> Self {
+impl TryFrom<Vec<Vec<FractionEnum>>> for FractionMatrixEnum {
+    type Error = Error;
+
+    fn try_from(value: Vec<Vec<FractionEnum>>) -> Result<Self> {
         if let Some(x) = value.iter().next() {
             if let Some(y) = x.iter().next() {
                 let number_of_columns = x.len();
                 //proper matrix
                 if y.is_exact() {
                     //exact mode
-                    let new_values = value
-                        .into_iter()
-                        .map(|row| {
-                            row.into_iter()
-                                .map(|cell| cell.extract_exact().cloned())
-                                .collect::<Result<Vec<_>>>()
-                        })
-                        .collect::<Result<Vec<_>>>();
-
-                    if let Ok(new_values) = new_values {
-                        Self::Fractions {
-                            number_of_columns,
-                            values: new_values,
+                    let mut new_rows = Vec::with_capacity(value.len());
+                    for row in value {
+                        if row.len() != number_of_columns {
+                            return Err(anyhow!("number of columns is not consistent"));
                         }
-                    } else {
-                        Self::CannotCombineExactAndApprox
+
+                        let mut new_row = Vec::with_capacity(number_of_columns);
+                        for f in row {
+                            match f {
+                                FractionEnum::Exact(f) => new_row.push(FractionExact(f)),
+                                FractionEnum::Approx(_) => {
+                                    return Err(anyhow!(
+                                        "cannot combine approximate and exact arithmetic"
+                                    ));
+                                }
+                                FractionEnum::CannotCombineExactAndApprox => {
+                                    return Err(anyhow!(
+                                        "cannot combine approximate and exact arithmetic"
+                                    ));
+                                }
+                            }
+                        }
+                        new_rows.push(new_row);
                     }
+
+                    let m: FractionMatrixExact = new_rows.try_into()?;
+                    Ok(Self::Exact(m))
                 } else {
                     //approximate mode
-                    let new_values = value
-                        .into_iter()
-                        .map(|row| {
-                            row.into_iter()
-                                .map(|cell| cell.extract_approx().cloned())
-                                .collect::<Result<Vec<_>>>()
-                        })
-                        .collect::<Result<Vec<_>>>();
-
-                    if let Ok(new_values) = new_values {
-                        Self::F64 {
-                            number_of_columns,
-                            values: new_values,
+                    let mut new_rows = Vec::with_capacity(value.len());
+                    for row in value {
+                        if row.len() != number_of_columns {
+                            return Err(anyhow!("number of columns is not consistent"));
                         }
-                    } else {
-                        Self::CannotCombineExactAndApprox
+
+                        let mut new_row = Vec::with_capacity(number_of_columns);
+                        for f in row {
+                            match f {
+                                FractionEnum::Exact(_) => {
+                                    return Err(anyhow!(
+                                        "cannot combine approximate and exact arithmetic"
+                                    ));
+                                }
+                                FractionEnum::Approx(f) => new_row.push(FractionF64(f)),
+                                FractionEnum::CannotCombineExactAndApprox => {
+                                    return Err(anyhow!(
+                                        "cannot combine approximate and exact arithmetic"
+                                    ));
+                                }
+                            }
+                        }
+                        new_rows.push(new_row);
                     }
+
+                    let m: FractionMatrixF64 = new_rows.try_into()?;
+                    Ok(Self::Approx(m))
                 }
             } else {
                 //rows, no columns
                 if is_exact_globally() {
-                    Self::Fractions {
-                        number_of_columns: 0,
-                        values: vec![vec![]; value.len()],
-                    }
+                    let new_rows = vec![vec![]; value.len()];
+                    let m: FractionMatrixExact = new_rows.try_into()?;
+                    Ok(Self::Exact(m))
                 } else {
-                    Self::F64 {
-                        number_of_columns: 0,
-                        values: vec![vec![]; value.len()],
-                    }
+                    let new_rows = vec![vec![]; value.len()];
+                    let m: FractionMatrixF64 = new_rows.try_into()?;
+                    Ok(Self::Approx(m))
                 }
             }
         } else {
             //no rows
             if is_exact_globally() {
-                Self::Fractions {
-                    number_of_columns: 0,
-                    values: vec![],
-                }
+                Ok(Self::Exact(FractionMatrixExact::new(0)))
             } else {
-                Self::F64 {
-                    number_of_columns: 0,
-                    values: vec![],
-                }
+                Ok(Self::Approx(FractionMatrixF64::new(0)))
             }
         }
     }
@@ -366,16 +217,17 @@ mod tests {
 
     #[test]
     fn fraction_matrix_abnormal() {
-        let m1: FractionMatrixEnum = vec![vec![
+        let mut m1: FractionMatrixEnum = vec![vec![
             FractionEnum::infinity(),
             FractionEnum::neg_infinity(),
             f_en!(8, 3),
         ]]
-        .into();
+        .try_into()
+        .unwrap();
 
-        let m2 = m1.clone().reduce();
+        let mut m2 = m1.clone().reduce();
 
-        assert_eq!(m1, m2)
+        assert!(m1.eq(&mut m2))
     }
 
     #[test]
@@ -386,7 +238,7 @@ mod tests {
             f_en!(8, 3),
         ]];
 
-        let m2: FractionMatrixEnum = m1.clone().into();
+        let m2: FractionMatrixEnum = m1.clone().try_into().unwrap();
         let m2 = m2.reduce();
 
         let m3 = m2.to_vec().unwrap();
