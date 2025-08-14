@@ -1,9 +1,7 @@
-use crate::{
-    ebi_matrix::EbiMatrix, exact::MaybeExact, fraction_f64::FractionF64, inversion::invert,
-};
+use crate::{ebi_matrix::EbiMatrix, exact::MaybeExact, fraction_f64::FractionF64};
 use anyhow::{Result, anyhow};
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct FractionMatrixF64 {
     values: Vec<Vec<f64>>,
     number_of_columns: usize,
@@ -43,10 +41,6 @@ impl EbiMatrix for FractionMatrixF64 {
 
     fn reduce(self) -> Self {
         self
-    }
-
-    fn invert(&mut self) -> Result<()> {
-        invert(&mut self.number_of_columns, &mut self.values)
     }
 }
 

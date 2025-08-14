@@ -19,3 +19,5 @@ pub mod fraction_matrix_enum;
 pub mod fraction_matrix_f64;
 pub mod fraction_matrix_exact;
 pub mod inversion;
+
+pub mod loose_fraction;

@@ -1,5 +1,4 @@
 use crate::exact::MaybeExact;
-use anyhow::Result;
 
 pub trait EbiMatrix: Clone + MaybeExact {
     /// Creates a new reduced matrix with no rows and the given number of columns.
@@ -16,6 +15,4 @@ pub trait EbiMatrix: Clone + MaybeExact {
     ///
     /// Has forseeably no effect on approximate arithmetic.
     fn reduce(self) -> Self;
-
-    fn invert(&mut self) -> Result<()>;
 }

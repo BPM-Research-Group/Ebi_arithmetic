@@ -18,6 +18,7 @@ use crate::{
     ebi_number::{EbiNumber, Infinite, Normal, One, Round, Signed, Zero},
     exact::MaybeExact,
     fraction::{ToExact, UInt},
+    loose_fraction::Type,
 };
 
 #[derive(Clone)]
@@ -867,27 +868,6 @@ ttype_signed!(i64);
 ttype_signed!(i32);
 ttype_signed!(i16);
 ttype_signed!(i8);
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum Type {
-    Plus,
-    Minus,
-    NaN,
-    Infinite,
-    NegInfinite,
-}
-
-impl Type {
-    pub fn sign(&self) -> Sign {
-        match self {
-            Type::Plus => Sign::Plus,
-            Type::Minus => Sign::Minus,
-            Type::NaN => Sign::Plus,
-            Type::Infinite => Sign::Plus,
-            Type::NegInfinite => Sign::Minus,
-        }
-    }
-}
 
 #[cfg(test)]
 mod tests {

@@ -12,7 +12,6 @@ use crate::{
     fraction::ToExact,
     fraction_enum::FractionEnum,
     fraction_exact::FractionExact,
-    inversion::invert,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -260,32 +259,6 @@ impl EbiMatrix for FractionMatrixEnum {
         };
 
         result2
-    }
-
-    fn invert(&mut self) -> Result<()> {
-        match self {
-            FractionMatrixEnum::F64 {
-                number_of_columns,
-                values,
-            } => invert(number_of_columns, values),
-            FractionMatrixEnum::Fractions {
-                number_of_columns,
-                values,
-            } => invert(number_of_columns, values),
-            FractionMatrixEnum::I64 {
-                number_of_columns,
-                values,
-                ..
-            } => todo!(),
-            FractionMatrixEnum::BigInt {
-                number_of_columns,
-                values,
-                ..
-            } => todo!(),
-            FractionMatrixEnum::CannotCombineExactAndApprox => {
-                Err(anyhow!("cannot combine exact and approximate arithmetic"))
-            }
-        }
     }
 }
 
