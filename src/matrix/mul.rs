@@ -32,12 +32,14 @@ impl Mul for &FractionMatrixExact {
         match (self, rhs) {
             (
                 FractionMatrixExact::U64 {
+                    number_of_columns,
                     types,
                     numerators,
                     denominators,
                     ..
                 },
                 FractionMatrixExact::U64 {
+                    number_of_columns: number_of_columns2,
                     types: types2,
                     numerators: numerators2,
                     denominators: denominators2,
@@ -47,29 +49,32 @@ impl Mul for &FractionMatrixExact {
                 let n = self.number_of_rows();
                 let m = self.number_of_columns();
                 let p = rhs.number_of_columns();
-                let mut new_types = vec![vec![Type::Plus; p]; n];
-                let mut new_num = vec![vec![0; p]; n];
-                let mut new_den = vec![vec![1; p]; n];
+                let mut new_types = vec![Type::Plus; p * n];
+                let mut new_num = vec![0; p * n];
+                let mut new_den = vec![1; p * n];
 
                 let mut last_attempted = None;
                 'outer: for i in 0..n {
                     for j in 0..p {
+                        let idx_ij = i * p + j;
                         for k in 0..m {
+                            let idx_ik = i * number_of_columns + k;
+                            let idx_kj = k * number_of_columns2 + j;
                             if loose_fraction::checked_add_assign_mul(
-                                &mut new_types[i][j],
-                                &mut new_num[i][j],
-                                &mut new_den[i][j],
-                                types[i][k],
-                                &numerators[i][k],
-                                &denominators[i][k],
-                                types2[k][j],
-                                &numerators2[k][j],
-                                &denominators2[k][j],
+                                &mut new_types[idx_ij],
+                                &mut new_num[idx_ij],
+                                &mut new_den[idx_ij],
+                                types[idx_ik],
+                                &numerators[idx_ik],
+                                &denominators[idx_ik],
+                                types2[idx_kj],
+                                &numerators2[idx_kj],
+                                &denominators2[idx_kj],
                             ) {
                                 //no overlflow; continue
                             } else {
                                 //overflow detected
-                                new_types[i][j] = Type::Plus;
+                                new_types[idx_ij] = Type::Plus;
                                 last_attempted = Some((i, j));
                                 break 'outer;
                             }
@@ -79,34 +84,38 @@ impl Mul for &FractionMatrixExact {
 
                 if let Some((r, c)) = last_attempted {
                     //overflow occurred, salvage results and finish it as a larger data type
-                    let mut new_new_num = vec![vec![BigUint::zero(); p]; n];
-                    let mut new_new_den = vec![vec![BigUint::one(); p]; n];
+                    let mut new_new_num = vec![BigUint::zero(); p * n];
+                    let mut new_new_den = vec![BigUint::one(); p * n];
 
                     //first copy the already obtained results to the larger data type
-                    iproduct!(0..n, 0..p).take(r * n + c).for_each(|(i, j)| {
-                        new_new_num[i][j] = new_num[i][j].to_biguint().unwrap();
-                        new_new_den[i][j] = new_den[i][j].to_biguint().unwrap();
+                    (0..n * p).take(r * n + c).for_each(|i| {
+                        new_new_num[i] = new_num[i].to_biguint().unwrap();
+                        new_new_den[i] = new_den[i].to_biguint().unwrap();
                     });
 
                     //second, finish the multiplication on the larger data type
                     iproduct!(0..n, 0..p).skip(r * n + c).for_each(|(i, j)| {
+                        let idx_ij = i * p + j;
                         for k in 0..m {
+                            let idx_ik = i * number_of_columns + k;
+                            let idx_kj = k * number_of_columns2 + j;
                             BigUint::add_assign_mul(
-                                &mut new_types[i][j],
-                                &mut new_new_num[i][j],
-                                &mut new_new_den[i][j],
-                                types[i][k],
-                                &numerators[i][k].to_biguint().unwrap(),
-                                &denominators[i][k].to_biguint().unwrap(),
-                                types2[k][j],
-                                &numerators2[k][j],
-                                &denominators2[k][j],
+                                &mut new_types[idx_ij],
+                                &mut new_new_num[idx_ij],
+                                &mut new_new_den[idx_ij],
+                                types[idx_ik],
+                                &numerators[idx_ik].to_biguint().unwrap(),
+                                &denominators[idx_ik].to_biguint().unwrap(),
+                                types2[idx_kj],
+                                &numerators2[idx_kj],
+                                &denominators2[idx_kj],
                             )
                         }
                     });
 
                     Ok(FractionMatrixExact::BigInt {
                         number_of_columns: n,
+                        number_of_rows: p,
                         types: new_types,
                         numerators: new_new_num,
                         denominators: new_new_den,
@@ -115,6 +124,7 @@ impl Mul for &FractionMatrixExact {
                     //completed normally
                     Ok(FractionMatrixExact::U64 {
                         number_of_columns: n,
+                        number_of_rows: p,
                         types: new_types,
                         numerators: new_num,
                         denominators: new_den,
@@ -123,12 +133,14 @@ impl Mul for &FractionMatrixExact {
             }
             (
                 FractionMatrixExact::U64 {
+                    number_of_columns,
                     types,
                     numerators,
                     denominators,
                     ..
                 },
                 FractionMatrixExact::BigInt {
+                    number_of_columns: number_of_columns2,
                     types: types2,
                     numerators: numerators2,
                     denominators: denominators2,
@@ -138,28 +150,32 @@ impl Mul for &FractionMatrixExact {
                 let n = self.number_of_rows();
                 let m = self.number_of_columns();
                 let p = rhs.number_of_columns();
-                let mut new_types = vec![vec![Type::Plus; p]; n];
-                let mut new_num = vec![vec![BigUint::zero(); p]; n];
-                let mut new_den = vec![vec![BigUint::one(); p]; n];
+                let mut new_types = vec![Type::Plus; p * n];
+                let mut new_num = vec![BigUint::zero(); p * n];
+                let mut new_den = vec![BigUint::one(); p * n];
 
                 iproduct!(0..n, 0..p).for_each(|(i, j)| {
+                    let idx_ij = i * p + j;
                     for k in 0..m {
+                        let idx_ik = i * number_of_columns + k;
+                        let idx_kj = k * number_of_columns2 + j;
                         BigUint::add_assign_mul(
-                            &mut new_types[i][j],
-                            &mut new_num[i][j],
-                            &mut new_den[i][j],
-                            types[i][k],
-                            &numerators[i][k],
-                            &denominators[i][k],
-                            types2[k][j],
-                            &numerators2[k][j],
-                            &denominators2[k][j],
+                            &mut new_types[idx_ij],
+                            &mut new_num[idx_ij],
+                            &mut new_den[idx_ij],
+                            types[idx_ik],
+                            &numerators[idx_ik],
+                            &denominators[idx_ik],
+                            types2[idx_kj],
+                            &numerators2[idx_kj],
+                            &denominators2[idx_kj],
                         );
                     }
                 });
 
                 Ok(FractionMatrixExact::BigInt {
                     number_of_columns: n,
+                    number_of_rows: p,
                     types: new_types,
                     numerators: new_num,
                     denominators: new_den,
@@ -167,12 +183,14 @@ impl Mul for &FractionMatrixExact {
             }
             (
                 FractionMatrixExact::BigInt {
+                    number_of_columns,
                     types,
                     numerators,
                     denominators,
                     ..
                 },
                 FractionMatrixExact::U64 {
+                    number_of_columns: number_of_columns2,
                     types: types2,
                     numerators: numerators2,
                     denominators: denominators2,
@@ -182,28 +200,32 @@ impl Mul for &FractionMatrixExact {
                 let n = self.number_of_rows();
                 let m = self.number_of_columns();
                 let p = rhs.number_of_columns();
-                let mut new_types = vec![vec![Type::Plus; p]; n];
-                let mut new_num = vec![vec![BigUint::zero(); p]; n];
-                let mut new_den = vec![vec![BigUint::one(); p]; n];
+                let mut new_types = vec![Type::Plus; p * n];
+                let mut new_num = vec![BigUint::zero(); p * n];
+                let mut new_den = vec![BigUint::one(); p * n];
 
                 iproduct!(0..n, 0..p).for_each(|(i, j)| {
+                    let idx_ij = i * p + j;
                     for k in 0..m {
+                        let idx_ik = i * number_of_columns + k;
+                        let idx_kj = k * number_of_columns2 + j;
                         BigUint::add_assign_mul(
-                            &mut new_types[i][j],
-                            &mut new_num[i][j],
-                            &mut new_den[i][j],
-                            types[i][k],
-                            &numerators[i][k],
-                            &denominators[i][k],
-                            types2[k][j],
-                            &numerators2[k][j],
-                            &denominators2[k][j],
+                            &mut new_types[idx_ij],
+                            &mut new_num[idx_ij],
+                            &mut new_den[idx_ij],
+                            types[idx_ik],
+                            &numerators[idx_ik],
+                            &denominators[idx_ik],
+                            types2[idx_kj],
+                            &numerators2[idx_kj],
+                            &denominators2[idx_kj],
                         );
                     }
                 });
 
                 Ok(FractionMatrixExact::BigInt {
                     number_of_columns: n,
+                    number_of_rows: p,
                     types: new_types,
                     numerators: new_num,
                     denominators: new_den,
@@ -211,12 +233,14 @@ impl Mul for &FractionMatrixExact {
             }
             (
                 FractionMatrixExact::BigInt {
+                    number_of_columns,
                     types,
                     numerators,
                     denominators,
                     ..
                 },
                 FractionMatrixExact::BigInt {
+                    number_of_columns: number_of_columns2,
                     types: types2,
                     numerators: numerators2,
                     denominators: denominators2,
@@ -226,28 +250,32 @@ impl Mul for &FractionMatrixExact {
                 let n = self.number_of_rows();
                 let m = self.number_of_columns();
                 let p = rhs.number_of_columns();
-                let mut new_types = vec![vec![Type::Plus; p]; n];
-                let mut new_num = vec![vec![BigUint::zero(); p]; n];
-                let mut new_den = vec![vec![BigUint::one(); p]; n];
+                let mut new_types = vec![Type::Plus; p * n];
+                let mut new_num = vec![BigUint::zero(); p * n];
+                let mut new_den = vec![BigUint::one(); p * n];
 
                 iproduct!(0..n, 0..p).for_each(|(i, j)| {
+                    let idx_ij = i * p + j;
                     for k in 0..m {
+                        let idx_ik = i * number_of_columns + k;
+                        let idx_kj = k * number_of_columns2 + j;
                         BigUint::add_assign_mul(
-                            &mut new_types[i][j],
-                            &mut new_num[i][j],
-                            &mut new_den[i][j],
-                            types[i][k],
-                            &numerators[i][k],
-                            &denominators[i][k],
-                            types2[k][j],
-                            &numerators2[k][j],
-                            &denominators2[k][j],
+                            &mut new_types[idx_ij],
+                            &mut new_num[idx_ij],
+                            &mut new_den[idx_ij],
+                            types[idx_ik],
+                            &numerators[idx_ik],
+                            &denominators[idx_ik],
+                            types2[idx_kj],
+                            &numerators2[idx_kj],
+                            &denominators2[idx_kj],
                         );
                     }
                 });
 
                 Ok(FractionMatrixExact::BigInt {
                     number_of_columns: n,
+                    number_of_rows: p,
                     types: new_types,
                     numerators: new_num,
                     denominators: new_den,

@@ -36,30 +36,32 @@ impl IdentityMinus for FractionMatrixF64 {
 }
 
 macro_rules! im {
-    ($types:ident, $numerators:ident, $denominators:ident) => {
-        for i in 0..$numerators.len() {
-            for j in 0..$numerators.len() {
-                if i == j {
-                    //on the diagonal
-
-                    if $types[i][i].is_plusminus() {
-                        //a normal number
-                        if $numerators[i][i] >= $denominators[i][i] {
-                            //1 - A if A >= 1 equals (A - 1)
-                            $types[i][i] = -$types[i][i];
-                            $numerators[i][i] -= &$denominators[i][i];
-                        } else {
-                            //1 - A if A < 1 equals 1 - A
-                            $numerators[i][i] = &$denominators[i][i] - &$numerators[i][i];
-                        }
+    ($types:ident, $numerators:ident, $denominators:ident, $number_of_columns:expr) => {
+        for (i, ((num, den), typee)) in $numerators
+            .iter_mut()
+            .zip($denominators.iter_mut())
+            .zip($types.iter_mut())
+            .enumerate()
+        {
+            if i % (*$number_of_columns + 1) == 0 {
+                //on the diagonal
+                if typee.is_plusminus() {
+                    //a normal number
+                    if num >= den {
+                        //1 - A if A >= 1 equals (A - 1)
+                        *typee = -*typee;
+                        *num -= &*den;
                     } else {
-                        //weird number; take its inverse
-                        $types[i][i] = -$types[i][i];
+                        //1 - A if A < 1 equals 1 - A
+                        *num = &*den - &*num;
                     }
                 } else {
-                    //off the diagonal
-                    $types[i][j] = -$types[i][j];
+                    //weird number; take its inverse
+                    *typee = -*typee;
                 }
+            } else {
+                //off the diagonal
+                *typee = -*typee;
             }
         }
     };
@@ -74,18 +76,20 @@ impl IdentityMinus for FractionMatrixExact {
         }
         match self {
             FractionMatrixExact::U64 {
+                number_of_columns,
                 types,
                 numerators,
                 denominators,
                 ..
-            } => im!(types, numerators, denominators),
+            } => im!(types, numerators, denominators, number_of_columns),
             FractionMatrixExact::BigInt {
+                number_of_columns,
                 types,
                 numerators,
                 denominators,
                 ..
             } => {
-                im!(types, numerators, denominators)
+                im!(types, numerators, denominators, number_of_columns)
             }
         }
         Ok(())

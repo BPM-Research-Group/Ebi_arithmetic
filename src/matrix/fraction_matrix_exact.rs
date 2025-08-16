@@ -5,6 +5,7 @@ use std::{
 
 use anyhow::{Error, Result, anyhow};
 use fraction::ToPrimitive;
+use itertools::Itertools;
 use num::{BigUint, Zero, integer::gcd};
 use num_bigint::ToBigUint;
 
@@ -19,15 +20,17 @@ use crate::{
 pub enum FractionMatrixExact {
     U64 {
         number_of_columns: usize,
-        types: Vec<Vec<Type>>,
-        numerators: Vec<Vec<u64>>,
-        denominators: Vec<Vec<u64>>,
+        number_of_rows: usize,
+        types: Vec<Type>,
+        numerators: Vec<u64>,
+        denominators: Vec<u64>,
     },
     BigInt {
         number_of_columns: usize,
-        types: Vec<Vec<Type>>,
-        numerators: Vec<Vec<BigUint>>,
-        denominators: Vec<Vec<BigUint>>,
+        number_of_rows: usize,
+        types: Vec<Type>,
+        numerators: Vec<BigUint>,
+        denominators: Vec<BigUint>,
     },
 }
 
@@ -35,6 +38,7 @@ impl FractionMatrixExact {
     /// Obtains an element from the matrix.
     /// This may be an expensive operation; consider using to_vec() to avoid some cloning.
     pub fn get(&self, row: usize, column: usize) -> Option<FractionExact> {
+        let idx = self.index(row, column);
         Some(match self {
             FractionMatrixExact::U64 {
                 numerators,
@@ -42,9 +46,9 @@ impl FractionMatrixExact {
                 types,
                 ..
             } => FractionExact::from((
-                *types.get(row)?.get(column)?,
-                numerators.get(row)?.get(column)?.clone(),
-                denominators.get(row)?.get(column)?.clone(),
+                *types.get(idx)?,
+                numerators.get(idx)?.clone(),
+                denominators.get(idx)?.clone(),
             )),
             FractionMatrixExact::BigInt {
                 numerators,
@@ -52,9 +56,9 @@ impl FractionMatrixExact {
                 types,
                 ..
             } => FractionExact::from((
-                *types.get(row)?.get(column)?,
-                numerators.get(row)?.get(column)?.clone(),
-                denominators.get(row)?.get(column)?.clone(),
+                *types.get(idx)?,
+                numerators.get(idx)?.clone(),
+                denominators.get(idx)?.clone(),
             )),
         })
     }
@@ -67,17 +71,16 @@ impl FractionMatrixExact {
                 types,
                 numerators,
                 denominators,
+                number_of_columns,
                 ..
             } => numerators
                 .into_iter()
                 .zip(denominators)
                 .zip(types)
-                .map(|((row_num, row_den), row_types)| {
-                    row_num
-                        .into_iter()
-                        .zip(row_den)
-                        .zip(row_types)
-                        .map(|((num, den), typee)| FractionExact::from((typee, num, den)))
+                .chunks(number_of_columns)
+                .into_iter()
+                .map(|row| {
+                    row.map(|((num, den), typee)| FractionExact::from((typee, num, den)))
                         .collect()
                 })
                 .collect(),
@@ -85,21 +88,24 @@ impl FractionMatrixExact {
                 types,
                 numerators,
                 denominators,
+                number_of_columns,
                 ..
             } => numerators
                 .into_iter()
                 .zip(denominators)
                 .zip(types)
-                .map(|((row_num, row_den), row_types)| {
-                    row_num
-                        .into_iter()
-                        .zip(row_den)
-                        .zip(row_types)
-                        .map(|((num, den), typee)| FractionExact::from((typee, num, den)))
+                .chunks(number_of_columns)
+                .into_iter()
+                .map(|row| {
+                    row.map(|((num, den), typee)| FractionExact::from((typee, num, den)))
                         .collect()
                 })
                 .collect(),
         })
+    }
+
+    pub(crate) fn index(&self, row: usize, column: usize) -> usize {
+        row * self.number_of_columns() + column
     }
 }
 
@@ -107,6 +113,7 @@ impl EbiMatrix for FractionMatrixExact {
     fn new(number_of_columns: usize) -> Self {
         Self::U64 {
             number_of_columns,
+            number_of_rows: 0,
             types: vec![],
             numerators: vec![],
             denominators: vec![],
@@ -115,8 +122,8 @@ impl EbiMatrix for FractionMatrixExact {
 
     fn number_of_rows(&self) -> usize {
         match self {
-            FractionMatrixExact::U64 { numerators, .. } => numerators.len(),
-            FractionMatrixExact::BigInt { numerators, .. } => numerators.len(),
+            FractionMatrixExact::U64 { number_of_rows, .. }
+            | FractionMatrixExact::BigInt { number_of_rows, .. } => *number_of_rows,
         }
     }
 
@@ -143,44 +150,39 @@ impl EbiMatrix for FractionMatrixExact {
                     .iter_mut()
                     .zip(denominators.iter_mut())
                     .zip(types.iter_mut())
-                    .for_each(|((row_num, row_den), row_type)| {
-                        row_num
-                            .iter_mut()
-                            .zip(row_den.iter_mut())
-                            .zip(row_type.iter_mut())
-                            .for_each(|((num, den), typee)| match typee {
-                                Type::Plus | Type::Minus => {
-                                    if typee.is_plusminus() {
-                                        if den.is_zero() {
-                                            *typee = Type::NaN;
-                                            num.set_zero();
-                                            return;
-                                        }
-                                        if num.is_zero() {
-                                            den.set_one();
-                                            return;
-                                        }
-                                        if num == den {
-                                            num.set_one();
-                                            den.set_one();
-                                            return;
-                                        }
-
-                                        let gcd = gcd(*num, *den);
-                                        *num /= gcd;
-                                        *den /= gcd;
-                                    } else {
-                                        num.set_zero();
-                                        den.set_zero();
-                                    }
+                    .for_each(|((num, den), typee)| match typee {
+                        Type::Plus | Type::Minus => {
+                            if typee.is_plusminus() {
+                                if den.is_zero() {
+                                    *typee = Type::NaN;
+                                    num.set_zero();
+                                    return;
                                 }
-                                _ => {}
-                            })
+                                if num.is_zero() {
+                                    den.set_one();
+                                    return;
+                                }
+                                if num == den {
+                                    num.set_one();
+                                    den.set_one();
+                                    return;
+                                }
+
+                                let gcd = gcd(*num, *den);
+                                *num /= gcd;
+                                *den /= gcd;
+                            } else {
+                                num.set_zero();
+                                den.set_zero();
+                            }
+                        }
+                        _ => {}
                     });
                 self
             }
             FractionMatrixExact::BigInt {
                 number_of_columns,
+                number_of_rows,
                 mut types,
                 mut numerators,
                 mut denominators,
@@ -192,60 +194,56 @@ impl EbiMatrix for FractionMatrixExact {
                     .iter_mut()
                     .zip(denominators.iter_mut())
                     .zip(types.iter_mut())
-                    .for_each(|((row_num, row_den), row_type)| {
-                        row_num
-                            .iter_mut()
-                            .zip(row_den.iter_mut())
-                            .zip(row_type)
-                            .for_each(|((num, den), typee)| match typee {
-                                Type::Plus | Type::Minus => {
-                                    if typee.is_plusminus() {
-                                        if den.is_zero() {
-                                            *typee = Type::NaN;
-                                            num.set_zero();
-                                            return;
-                                        }
-                                        if num.is_zero() {
-                                            den.set_one();
-                                            return;
-                                        }
-                                        if num == den {
-                                            num.set_one();
-                                            den.set_one();
-                                            return;
-                                        }
-                                        let gcd = gcd(num.clone(), den.clone());
-                                        *num /= &gcd;
-                                        *den /= gcd;
+                    .for_each(|((num, den), typee)| match typee {
+                        Type::Plus | Type::Minus => {
+                            if typee.is_plusminus() {
+                                if den.is_zero() {
+                                    *typee = Type::NaN;
+                                    num.set_zero();
+                                    return;
+                                }
+                                if num.is_zero() {
+                                    den.set_one();
+                                    return;
+                                }
+                                if num == den {
+                                    num.set_one();
+                                    den.set_one();
+                                    return;
+                                }
+                                let gcd = gcd(num.clone(), den.clone());
+                                *num /= &gcd;
+                                *den /= gcd;
 
-                                        if fits_u64.load(Ordering::Relaxed) {
-                                            //check whether the values would fit in u64
-                                            if &*num > &max_u64 || &*den > &max_u64 {
-                                                fits_u64.store(false, Ordering::Release);
-                                            }
-                                        }
+                                if fits_u64.load(Ordering::Relaxed) {
+                                    //check whether the values would fit in u64
+                                    if &*num > &max_u64 || &*den > &max_u64 {
+                                        fits_u64.store(false, Ordering::Release);
                                     }
                                 }
-                                _ => {}
-                            })
+                            }
+                        }
+                        _ => {}
                     });
                 if fits_u64.load(Ordering::Acquire) {
                     //all values fit in u64; return a u64-matrix
                     Self::U64 {
-                        number_of_columns: number_of_columns,
+                        number_of_columns,
+                        number_of_rows,
                         types: types,
                         numerators: numerators
                             .into_iter()
-                            .map(|row| row.into_iter().map(|num| num.to_u64().unwrap()).collect())
+                            .map(|num| num.to_u64().unwrap())
                             .collect(),
                         denominators: denominators
                             .into_iter()
-                            .map(|row| row.into_iter().map(|num| num.to_u64().unwrap()).collect())
+                            .map(|num| num.to_u64().unwrap())
                             .collect(),
                     }
                 } else {
                     FractionMatrixExact::BigInt {
                         number_of_columns,
+                        number_of_rows,
                         types,
                         numerators,
                         denominators,
@@ -271,18 +269,21 @@ impl EbiMatrix for FractionMatrixExact {
             (
                 FractionMatrixExact::U64 {
                     number_of_columns,
+                    number_of_rows,
                     types,
                     numerators,
                     denominators,
                 },
                 FractionMatrixExact::U64 {
                     number_of_columns: number_of_columns2,
+                    number_of_rows: number_of_rows2,
                     types: types2,
                     numerators: numerators2,
                     denominators: denominators2,
                 },
             ) => {
                 number_of_columns == number_of_columns2
+                    && number_of_rows == number_of_rows2
                     && types == types2
                     && numerators == numerators2
                     && denominators == denominators2
@@ -290,18 +291,21 @@ impl EbiMatrix for FractionMatrixExact {
             (
                 FractionMatrixExact::BigInt {
                     number_of_columns,
+                    number_of_rows,
                     types,
                     numerators,
                     denominators,
                 },
                 FractionMatrixExact::BigInt {
                     number_of_columns: number_of_columns2,
+                    number_of_rows: number_of_rows2,
                     types: types2,
                     numerators: numerators2,
                     denominators: denominators2,
                 },
             ) => {
                 number_of_columns == number_of_columns2
+                    && number_of_rows == number_of_rows2
                     && types == types2
                     && numerators == numerators2
                     && denominators == denominators2
@@ -315,21 +319,20 @@ impl TryFrom<Vec<Vec<FractionExact>>> for FractionMatrixExact {
     type Error = Error;
 
     fn try_from(value: Vec<Vec<FractionExact>>) -> Result<Self> {
+        let number_of_rows = value.len();
         if let Some(x) = value.iter().next() {
             let number_of_columns = x.len();
             //has rows
 
-            let mut types = Vec::with_capacity(value.len());
+            let mut types = Vec::with_capacity(number_of_rows * number_of_columns);
             for row in value.iter() {
                 if row.len() != number_of_columns {
                     return Err(anyhow!("number of columns is not consistent"));
                 }
 
-                let mut new_row = Vec::with_capacity(number_of_columns);
                 for v in row {
-                    new_row.push((&v.0).into());
+                    types.push((&v.0).into());
                 }
-                types.push(new_row);
             }
 
             let numerators = value
@@ -342,6 +345,7 @@ impl TryFrom<Vec<Vec<FractionExact>>> for FractionMatrixExact {
                         })
                         .collect::<Vec<_>>()
                 })
+                .flatten()
                 .collect::<Vec<_>>();
 
             let denominators = value
@@ -354,10 +358,12 @@ impl TryFrom<Vec<Vec<FractionExact>>> for FractionMatrixExact {
                         })
                         .collect::<Vec<_>>()
                 })
+                .flatten()
                 .collect::<Vec<_>>();
 
             Ok(Self::BigInt {
                 number_of_columns,
+                number_of_rows,
                 types,
                 numerators,
                 denominators,
@@ -366,6 +372,7 @@ impl TryFrom<Vec<Vec<FractionExact>>> for FractionMatrixExact {
             //no rows
             Ok(Self::BigInt {
                 number_of_columns: 0,
+                number_of_rows: 0,
                 types: vec![],
                 numerators: vec![],
                 denominators: vec![],
@@ -416,10 +423,11 @@ mod tests {
         }
 
         let m3 = FractionMatrixExact::U64 {
+            number_of_rows: 1,
             number_of_columns: 3,
-            types: vec![vec![Type::Plus, Type::Plus, Type::Plus]],
-            numerators: vec![vec![1, 2, 8]],
-            denominators: vec![vec![4, 5, 3]],
+            types: vec![Type::Plus, Type::Plus, Type::Plus],
+            numerators: vec![1, 2, 8],
+            denominators: vec![4, 5, 3],
         };
 
         assert!(m2.inner_eq(&m3));
@@ -437,10 +445,11 @@ mod tests {
         let m2 = m1.clone().reduce();
 
         let m3 = FractionMatrixExact::U64 {
+            number_of_rows: 1,
             number_of_columns: 3,
-            types: vec![vec![Type::Infinite, Type::NegInfinite, Type::Plus]],
-            numerators: vec![vec![0, 0, 8]],
-            denominators: vec![vec![0, 0, 3]],
+            types: vec![Type::Infinite, Type::NegInfinite, Type::Plus],
+            numerators: vec![0, 0, 8],
+            denominators: vec![0, 0, 3],
         };
 
         assert!(m2.inner_eq(&m3));
