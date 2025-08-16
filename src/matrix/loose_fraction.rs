@@ -1,4 +1,4 @@
-use std::ops::{Add, Mul};
+use std::ops::{Add, Mul, Neg};
 
 use fraction::{GenericFraction, Sign};
 use num::{BigUint, Integer};
@@ -303,6 +303,20 @@ impl Add for Type {
             (Type::NegInfinite, Type::Minus) => Some(Type::NegInfinite),
             (Type::NegInfinite, Type::Infinite) => Some(Type::NaN),
             (Type::NegInfinite, Type::NegInfinite) => Some(Type::NegInfinite),
+        }
+    }
+}
+
+impl Neg for Type {
+    type Output = Type;
+
+    fn neg(self) -> Self::Output {
+        match self {
+            Type::Plus => Type::Minus,
+            Type::Minus => Type::Plus,
+            Type::NaN => Type::NaN,
+            Type::Infinite => Type::NegInfinite,
+            Type::NegInfinite => Type::Infinite,
         }
     }
 }

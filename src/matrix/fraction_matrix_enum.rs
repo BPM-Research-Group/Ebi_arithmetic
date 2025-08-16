@@ -1,13 +1,14 @@
 use anyhow::{Error, Result, anyhow};
 
 use crate::{
-    ebi_matrix::EbiMatrix,
     exact::{self, MaybeExact, is_exact_globally},
     fraction_enum::FractionEnum,
     fraction_exact::FractionExact,
     fraction_f64::FractionF64,
-    fraction_matrix_exact::FractionMatrixExact,
-    fraction_matrix_f64::FractionMatrixF64,
+    matrix::{
+        ebi_matrix::EbiMatrix, fraction_matrix_exact::FractionMatrixExact,
+        fraction_matrix_f64::FractionMatrixF64,
+    },
 };
 
 #[derive(Clone, Debug)]
@@ -20,14 +21,14 @@ pub enum FractionMatrixEnum {
 impl FractionMatrixEnum {
     /// Obtains an element from the matrix.
     /// This may be an expensive operation.
-    pub fn get(&self, row: usize, column: usize) -> FractionEnum {
-        match self {
-            FractionMatrixEnum::Approx(m) => FractionEnum::Approx(m.get(row, column).0),
-            FractionMatrixEnum::Exact(m) => FractionEnum::Exact(m.get(row, column).0),
+    pub fn get(&self, row: usize, column: usize) -> Option<FractionEnum> {
+        Some(match self {
+            FractionMatrixEnum::Approx(m) => FractionEnum::Approx(m.get(row, column)?.0),
+            FractionMatrixEnum::Exact(m) => FractionEnum::Exact(m.get(row, column)?.0),
             FractionMatrixEnum::CannotCombineExactAndApprox => {
                 FractionEnum::CannotCombineExactAndApprox
             }
-        }
+        })
     }
 
     pub fn to_vec(self) -> Result<Vec<Vec<FractionEnum>>> {
@@ -211,8 +212,9 @@ impl TryFrom<Vec<Vec<FractionEnum>>> for FractionMatrixEnum {
 mod tests {
 
     use crate::{
-        ebi_matrix::EbiMatrix, f_en, fraction_enum::FractionEnum,
-        fraction_matrix_enum::FractionMatrixEnum,
+        f_en,
+        fraction_enum::FractionEnum,
+        matrix::{ebi_matrix::EbiMatrix, fraction_matrix_enum::FractionMatrixEnum},
     };
 
     #[test]

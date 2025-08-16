@@ -21,7 +21,10 @@ pub type FractionMatrix = super::fraction_matrix_exact::FractionMatrixExact;
 //======================== tests ========================//
 #[cfg(test)]
 mod tests {
-    use crate::{ebi_matrix::EbiMatrix, f, fraction::Fraction, fraction_matrix::FractionMatrix};
+    use crate::{
+        f, fraction::Fraction, matrix::ebi_matrix::EbiMatrix,
+        matrix::fraction_matrix::FractionMatrix,
+    };
 
     #[test]
     fn fraction_matrix() {
@@ -54,7 +57,9 @@ mod tests {
     fn fraction_matrix_get() {
         let m: FractionMatrix = vec![vec![f!(1, 4), f!(2, 5), f!(8, 3)]].try_into().unwrap();
 
-        assert_eq!(m.get(0, 0), f!(1, 4));
+        assert!(m.get(10,10).is_none());
+
+        assert_eq!(m.get(0, 0).unwrap(), f!(1, 4));
     }
 
     #[test]

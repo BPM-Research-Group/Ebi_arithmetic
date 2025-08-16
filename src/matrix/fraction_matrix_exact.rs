@@ -9,8 +9,10 @@ use num::{BigUint, Zero, integer::gcd};
 use num_bigint::ToBigUint;
 
 use crate::{
-    ebi_matrix::EbiMatrix, ebi_number::One, exact::MaybeExact, fraction_exact::FractionExact,
-    loose_fraction::Type,
+    ebi_number::One,
+    exact::MaybeExact,
+    fraction_exact::FractionExact,
+    matrix::{ebi_matrix::EbiMatrix, loose_fraction::Type},
 };
 
 #[derive(Clone, Debug)]
@@ -32,17 +34,17 @@ pub enum FractionMatrixExact {
 impl FractionMatrixExact {
     /// Obtains an element from the matrix.
     /// This may be an expensive operation; consider using to_vec() to avoid some cloning.
-    pub fn get(&self, row: usize, column: usize) -> FractionExact {
-        match self {
+    pub fn get(&self, row: usize, column: usize) -> Option<FractionExact> {
+        Some(match self {
             FractionMatrixExact::U64 {
                 numerators,
                 denominators,
                 types,
                 ..
             } => FractionExact::from((
-                types[row][column],
-                numerators[row][column].clone(),
-                denominators[row][column].clone(),
+                *types.get(row)?.get(column)?,
+                numerators.get(row)?.get(column)?.clone(),
+                denominators.get(row)?.get(column)?.clone(),
             )),
             FractionMatrixExact::BigInt {
                 numerators,
@@ -50,11 +52,11 @@ impl FractionMatrixExact {
                 types,
                 ..
             } => FractionExact::from((
-                types[row][column],
-                numerators[row][column].clone(),
-                denominators[row][column].clone(),
+                *types.get(row)?.get(column)?,
+                numerators.get(row)?.get(column)?.clone(),
+                denominators.get(row)?.get(column)?.clone(),
             )),
-        }
+        })
     }
 
     /// Obtains all elements from the matrix.
@@ -394,8 +396,11 @@ impl MaybeExact for FractionMatrixExact {
 mod tests {
 
     use crate::{
-        ebi_matrix::EbiMatrix, f_e, fraction_exact::FractionExact,
-        fraction_matrix_exact::FractionMatrixExact, loose_fraction::Type,
+        f_e,
+        fraction_exact::FractionExact,
+        matrix::{
+            ebi_matrix::EbiMatrix, fraction_matrix_exact::FractionMatrixExact, loose_fraction::Type,
+        },
     };
 
     #[test]

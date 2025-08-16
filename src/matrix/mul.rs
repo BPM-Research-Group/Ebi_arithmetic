@@ -5,12 +5,14 @@ use num_bigint::ToBigUint;
 use std::ops::Mul;
 
 use crate::{
-    ebi_matrix::EbiMatrix,
     ebi_number::{One, Zero},
-    fraction_matrix_enum::FractionMatrixEnum,
-    fraction_matrix_exact::FractionMatrixExact,
-    fraction_matrix_f64::FractionMatrixF64,
-    loose_fraction::{self, LooseFraction, Type},
+    matrix::{
+        ebi_matrix::EbiMatrix,
+        fraction_matrix_enum::FractionMatrixEnum,
+        fraction_matrix_exact::FractionMatrixExact,
+        fraction_matrix_f64::FractionMatrixF64,
+        loose_fraction::{self, LooseFraction, Type},
+    },
 };
 
 impl Mul for &FractionMatrixExact {
@@ -272,17 +274,20 @@ impl Mul for &FractionMatrixF64 {
         let n = self.number_of_rows();
         let m = self.number_of_columns();
         let p = rhs.number_of_columns();
-        let mut values = vec![vec![0f64; p]; n];
+        let mut values = vec![0f64; p * n];
 
         iproduct!(0..n, 0..p).for_each(|(i, j)| {
             for k in 0..m {
-                values[i][j] += self.values[i][k] * rhs.values[k][j];
+                let idx_ik = self.index(i, k);
+                let idx_kj = rhs.index(k, j);
+                values[i * n + j] += self.values[idx_ik] * rhs.values[idx_kj];
             }
         });
 
         Ok(FractionMatrixF64 {
             values,
             number_of_columns: n,
+            number_of_rows: p,
         })
     }
 }
@@ -307,11 +312,11 @@ impl Mul for &FractionMatrixEnum {
 mod tests {
 
     use crate::{
-        ebi_matrix::EbiMatrix,
         ebi_number::{One, Zero},
         f, f0, f1,
         fraction::Fraction,
-        fraction_matrix::FractionMatrix,
+        matrix::ebi_matrix::EbiMatrix,
+        matrix::fraction_matrix::FractionMatrix,
     };
 
     #[test]

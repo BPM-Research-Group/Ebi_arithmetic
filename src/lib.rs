@@ -13,12 +13,15 @@ pub mod fraction_f64;
 pub mod num;
 pub mod parsing;
 
-pub mod ebi_matrix;
-pub mod fraction_matrix;
-pub mod fraction_matrix_enum;
-pub mod fraction_matrix_exact;
-pub mod fraction_matrix_f64;
-pub mod inversion;
+pub mod matrix {
+    pub mod ebi_matrix;
+    pub mod fraction_matrix;
+    pub mod fraction_matrix_enum;
+    pub mod fraction_matrix_exact;
+    pub mod fraction_matrix_f64;
+    pub mod inversion;
 
-pub mod loose_fraction;
-pub mod mul;
+    pub mod identity_minus;
+    pub mod loose_fraction;
+    pub mod mul;
+}

@@ -17,8 +17,7 @@ use std::{
 use crate::{
     ebi_number::{EbiNumber, Infinite, Normal, One, Round, Signed, Zero},
     exact::MaybeExact,
-    fraction::{ToExact, UInt},
-    loose_fraction::Type,
+    fraction::{ToExact, UInt}, matrix::loose_fraction::Type,
 };
 
 #[derive(Clone)]

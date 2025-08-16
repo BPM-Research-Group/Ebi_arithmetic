@@ -1,6 +1,6 @@
-use crate::exact::MaybeExact;
+use crate::{exact::MaybeExact, matrix::identity_minus::IdentityMinus};
 
-pub trait EbiMatrix: Clone + MaybeExact {
+pub trait EbiMatrix: Clone + MaybeExact + IdentityMinus {
     /// Creates a new reduced matrix with no rows and the given number of columns.
     fn new(number_of_columns: usize) -> Self;
 
