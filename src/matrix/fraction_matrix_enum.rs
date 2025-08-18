@@ -98,6 +98,26 @@ impl EbiMatrix for FractionMatrixEnum {
             _ => false,
         }
     }
+
+    fn push_columns(&mut self, number_of_columns_to_add: usize) {
+        match self {
+            FractionMatrixEnum::Approx(m) => m.push_columns(number_of_columns_to_add),
+            FractionMatrixEnum::Exact(m) => m.push_columns(number_of_columns_to_add),
+            FractionMatrixEnum::CannotCombineExactAndApprox => {}
+        }
+    }
+
+    fn pop_front_columns(&mut self, number_of_columns_to_remove: usize) {
+        match self {
+            FractionMatrixEnum::Approx(m) => {
+                m.pop_front_columns(number_of_columns_to_remove)
+            }
+            FractionMatrixEnum::Exact(m) => {
+                m.pop_front_columns(number_of_columns_to_remove)
+            }
+            FractionMatrixEnum::CannotCombineExactAndApprox => {}
+        }
+    }
 }
 
 impl MaybeExact for FractionMatrixEnum {

@@ -14,6 +14,7 @@ use crate::{
     exact::MaybeExact,
     fraction_exact::FractionExact,
     matrix::{ebi_matrix::EbiMatrix, loose_fraction::Type},
+    pop_front_columns, push_columns,
 };
 
 #[derive(Clone, Debug)]
@@ -311,6 +312,130 @@ impl EbiMatrix for FractionMatrixExact {
                     && denominators == denominators2
             }
             _ => false,
+        }
+    }
+
+    fn push_columns(&mut self, number_of_columns_to_add: usize) {
+        match self {
+            FractionMatrixExact::U64 {
+                number_of_columns,
+                number_of_rows,
+                types,
+                numerators,
+                denominators,
+            } => {
+                push_columns!(
+                    Type::Plus,
+                    number_of_columns_to_add,
+                    types,
+                    *number_of_rows,
+                    *number_of_columns
+                );
+                push_columns!(
+                    u64::zero(),
+                    number_of_columns_to_add,
+                    numerators,
+                    *number_of_rows,
+                    *number_of_columns
+                );
+                push_columns!(
+                    u64::one(),
+                    number_of_columns_to_add,
+                    denominators,
+                    *number_of_rows,
+                    *number_of_columns
+                );
+                *number_of_columns += number_of_columns_to_add;
+            }
+            FractionMatrixExact::BigInt {
+                number_of_columns,
+                number_of_rows,
+                types,
+                numerators,
+                denominators,
+            } => {
+                push_columns!(
+                    Type::Plus,
+                    number_of_columns_to_add,
+                    types,
+                    *number_of_rows,
+                    *number_of_columns
+                );
+                push_columns!(
+                    BigUint::zero(),
+                    number_of_columns_to_add,
+                    numerators,
+                    *number_of_rows,
+                    *number_of_columns
+                );
+                push_columns!(
+                    BigUint::one(),
+                    number_of_columns_to_add,
+                    denominators,
+                    *number_of_rows,
+                    *number_of_columns
+                );
+                *number_of_columns += number_of_columns_to_add;
+            }
+        };
+    }
+
+    fn pop_front_columns(&mut self, number_of_columns_to_remove: usize) {
+        match self {
+            FractionMatrixExact::U64 {
+                number_of_columns,
+                number_of_rows,
+                types,
+                numerators,
+                denominators,
+            } => {
+                pop_front_columns!(
+                    number_of_columns_to_remove,
+                    types,
+                    *number_of_rows,
+                    *number_of_columns
+                );
+                pop_front_columns!(
+                    number_of_columns_to_remove,
+                    numerators,
+                    *number_of_rows,
+                    *number_of_columns
+                );
+                pop_front_columns!(
+                    number_of_columns_to_remove,
+                    denominators,
+                    *number_of_rows,
+                    *number_of_columns
+                );
+                *number_of_columns -= number_of_columns_to_remove;
+            }
+            FractionMatrixExact::BigInt {
+                number_of_columns,
+                number_of_rows,
+                types,
+                numerators,
+                denominators,
+            } => {
+                pop_front_columns!(
+                    number_of_columns_to_remove,
+                    types,
+                    *number_of_rows,
+                    *number_of_columns
+                );
+                pop_front_columns!(
+                    number_of_columns_to_remove,
+                    numerators,
+                    *number_of_rows,
+                    *number_of_columns
+                );
+                pop_front_columns!(
+                    number_of_columns_to_remove,
+                    denominators,
+                    *number_of_rows,
+                    *number_of_columns
+                );
+                *number_of_columns -= number_of_columns_to_remove;
+            }
         }
     }
 }

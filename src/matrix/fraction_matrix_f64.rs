@@ -1,4 +1,7 @@
-use crate::{exact::MaybeExact, fraction_f64::FractionF64, matrix::ebi_matrix::EbiMatrix};
+use crate::{
+    ebi_number::Zero, exact::MaybeExact, fraction_f64::FractionF64, matrix::ebi_matrix::EbiMatrix,
+    pop_front_columns, push_columns,
+};
 use anyhow::{Error, Result, anyhow};
 use itertools::Itertools;
 
@@ -59,6 +62,27 @@ impl EbiMatrix for FractionMatrixF64 {
 
     fn inner_eq(&self, other: &Self) -> bool {
         self == other
+    }
+
+    fn push_columns(&mut self, number_of_columns_to_add: usize) {
+        push_columns!(
+            f64::zero(),
+            number_of_columns_to_add,
+            self.values,
+            self.number_of_rows,
+            self.number_of_columns
+        );
+        self.number_of_columns += number_of_columns_to_add;
+    }
+
+    fn pop_front_columns(&mut self, number_of_columns_to_remove: usize) {
+        pop_front_columns!(
+            number_of_columns_to_remove,
+            self.values,
+            self.number_of_rows,
+            self.number_of_columns
+        );
+        self.number_of_columns -= number_of_columns_to_remove;
     }
 }
 

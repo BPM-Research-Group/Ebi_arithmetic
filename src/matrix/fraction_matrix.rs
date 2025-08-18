@@ -22,7 +22,7 @@ pub type FractionMatrix = super::fraction_matrix_exact::FractionMatrixExact;
 #[cfg(test)]
 mod tests {
     use crate::{
-        f, fraction::Fraction, matrix::ebi_matrix::EbiMatrix,
+        ebi_number::Zero, f, f0, fraction::Fraction, matrix::ebi_matrix::EbiMatrix,
         matrix::fraction_matrix::FractionMatrix,
     };
 
@@ -57,7 +57,7 @@ mod tests {
     fn fraction_matrix_get() {
         let m: FractionMatrix = vec![vec![f!(1, 4), f!(2, 5), f!(8, 3)]].try_into().unwrap();
 
-        assert!(m.get(10,10).is_none());
+        assert!(m.get(10, 10).is_none());
 
         assert_eq!(m.get(0, 0).unwrap(), f!(1, 4));
     }
@@ -68,5 +68,35 @@ mod tests {
         let _: FractionMatrix = vec![vec![f!(1, 4), f!(2, 5)], vec![f!(8, 3)]]
             .try_into()
             .unwrap();
+    }
+
+    #[test]
+    fn fraction_matrix_pop_front() {
+        let mut m1: FractionMatrix = vec![vec![f!(1, 4), f!(2, 5), f!(8, 3)]].try_into().unwrap();
+
+        m1.pop_front_columns(1);
+
+        let m3: FractionMatrix = vec![vec![f!(2, 5), f!(8, 3)]].try_into().unwrap();
+
+        println!("{:?}", m1);
+        println!("{:?}", m3);
+
+        assert!(m1.inner_eq(&m3));
+    }
+
+    #[test]
+    fn fraction_matrix_push_columns() {
+        let mut m1: FractionMatrix = vec![vec![f!(1, 4), f!(2, 5), f!(8, 3)]].try_into().unwrap();
+
+        m1.push_columns(1);
+
+        let m3: FractionMatrix = vec![vec![f!(1, 4), f!(2, 5), f!(8, 3), f0!()]]
+            .try_into()
+            .unwrap();
+
+        println!("{:?}", m1);
+        println!("{:?}", m3);
+
+        assert!(m1.inner_eq(&m3));
     }
 }
