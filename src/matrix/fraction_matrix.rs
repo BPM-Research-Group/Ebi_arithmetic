@@ -18,12 +18,65 @@ pub type FractionMatrix = super::fraction_matrix_f64::FractionMatrixF64;
 #[cfg(all(feature = "exactarithmetic", not(feature = "approximatearithmetic")))]
 pub type FractionMatrix = super::fraction_matrix_exact::FractionMatrixExact;
 
+//======================== common code ========================//
+
+use std::io::Write;
+
+use anyhow::Result;
+
+#[macro_export]
+macro_rules! push_columns {
+    ($zero:expr, $number_of_columns_to_add:expr, $values:expr, $number_of_rows:expr, $number_of_columns:expr) => {
+        for row in (0..$number_of_rows).rev() {
+            $values.splice(
+                row * $number_of_columns + $number_of_columns
+                    ..row * $number_of_columns + $number_of_columns,
+                vec![$zero; $number_of_columns_to_add],
+            );
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! pop_front_columns {
+    ($number_of_columns_to_remove:expr, $values:expr, $number_of_rows:expr, $number_of_columns:expr) => {
+        for row in (0..$number_of_rows).rev() {
+            $values.drain(
+                row * $number_of_columns..row * $number_of_columns + $number_of_columns_to_remove,
+            );
+        }
+    };
+}
+
+pub(crate) fn display_as_matrix<T>(values: &[T], number_of_columns: usize) -> Result<String>
+where
+    T: std::fmt::Display,
+{
+    let mut f = vec![];
+    write!(f, "{{{{")?;
+    for (i, row) in values.chunks(number_of_columns).enumerate() {
+        for (j, fraction) in row.iter().enumerate() {
+            write!(f, "{}", fraction.to_string())?;
+            if j < row.len() - 1 {
+                write!(f, ", ")?;
+            }
+        }
+        if i + 1 < (values.len() / number_of_columns) {
+            write!(f, "}},\n {{")?;
+        }
+    }
+    write!(f, "}}}}")?;
+    Ok(str::from_utf8(&f)?.to_owned())
+}
+
 //======================== tests ========================//
 #[cfg(test)]
 mod tests {
     use crate::{
-        ebi_number::Zero, f, f0, fraction::Fraction, matrix::ebi_matrix::EbiMatrix,
-        matrix::fraction_matrix::FractionMatrix,
+        ebi_number::Zero,
+        f, f0,
+        fraction::Fraction,
+        matrix::{ebi_matrix::EbiMatrix, fraction_matrix::FractionMatrix, inversion::Inversion},
     };
 
     #[test]
@@ -98,5 +151,35 @@ mod tests {
         // println!("{:?}", m3);
 
         assert!(m1.inner_eq(&m3));
+    }
+
+    #[test]
+    fn fraction_matrix_inverse() {
+        let mut m: FractionMatrix = vec![
+            vec![1.into(), 0.into(), 0.into(), 0.into()],
+            vec![0.into(), 1.into(), 0.into(), Fraction::from((-3, 5))],
+            vec![0.into(), Fraction::from((-3, 4)), 1.into(), 0.into()],
+            vec![0.into(), 0.into(), 0.into(), 1.into()],
+        ]
+        .try_into()
+        .unwrap();
+
+        let i: FractionMatrix = vec![
+            vec![1.into(), 0.into(), 0.into(), 0.into()],
+            vec![0.into(), 1.into(), 0.into(), Fraction::from((3, 5))],
+            vec![
+                0.into(),
+                Fraction::from((3, 4)),
+                1.into(),
+                Fraction::from((9, 20)),
+            ],
+            vec![0.into(), 0.into(), 0.into(), 1.into()],
+        ]
+        .try_into()
+        .unwrap();
+
+        m.invert().unwrap();
+
+        assert_eq!(m, i);
     }
 }

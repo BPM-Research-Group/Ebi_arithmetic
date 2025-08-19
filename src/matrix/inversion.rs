@@ -1,4 +1,9 @@
-use std::mem;
+use std::{
+    fmt::{Debug, Display},
+    mem,
+    ops::{DivAssign, MulAssign, SubAssign},
+    sync::atomic::AtomicBool,
+};
 
 use crate::{
     ebi_number::{One, Zero},
@@ -67,11 +72,12 @@ impl Inversion for FractionMatrixF64 {
             return Ok(self);
         }
 
-        // log::debug!("\t\tcompute inverse of {}", self);
+        println!("compute inverse of\n{}", self);
 
         //extend the rows with the identity matrix
         self.push_columns(self.number_of_rows);
         for i in 0..self.number_of_rows {
+            let idx_ii = self.index(i, self.number_of_rows + i);
             let idx_ii = self.index(i, self.number_of_rows + i);
             self.values[idx_ii] = f64::one();
         }

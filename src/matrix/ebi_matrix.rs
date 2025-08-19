@@ -49,28 +49,3 @@ pub trait EbiMatrix<T>: Clone + MaybeExact + IdentityMinus + GaussJordan {
     /// If row and column do not exist, behaviour is undefined, and may panic.
     fn set_one(&mut self, row: usize, column: usize);
 }
-
-// shared macros
-#[macro_export]
-macro_rules! push_columns {
-    ($zero:expr, $number_of_columns_to_add:expr, $values:expr, $number_of_rows:expr, $number_of_columns:expr) => {
-        for row in (0..$number_of_rows).rev() {
-            $values.splice(
-                row * $number_of_columns + $number_of_columns
-                    ..row * $number_of_columns + $number_of_columns,
-                vec![$zero; $number_of_columns_to_add],
-            );
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! pop_front_columns {
-    ($number_of_columns_to_remove:expr, $values:expr, $number_of_rows:expr, $number_of_columns:expr) => {
-        for row in (0..$number_of_rows).rev() {
-            $values.drain(
-                row * $number_of_columns..row * $number_of_columns + $number_of_columns_to_remove,
-            );
-        }
-    };
-}

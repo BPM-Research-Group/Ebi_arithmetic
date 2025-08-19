@@ -155,7 +155,7 @@ impl MaybeExact for FractionMatrixF64 {
     }
 }
 
-impl Display for FractionMatrixF64 {
+impl std::fmt::Display for FractionMatrixF64 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{{{{")?;
         for (i, row) in self.values.chunks(self.number_of_columns).enumerate() {
@@ -165,8 +165,8 @@ impl Display for FractionMatrixF64 {
                     write!(f, ", ")?;
                 }
             }
-            if i + 1 < self.number_of_rows {
-                write!(f, "}},\n{{")?;
+            if i < self.number_of_rows - 1 {
+                write!(f, "}},\n {{")?;
             }
         }
         write!(f, "}}}}")
