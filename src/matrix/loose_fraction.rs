@@ -18,6 +18,8 @@ pub trait LooseFraction<T, U> {
         num_c: &U,
         den_c: &U,
     );
+
+    // fn mul_assign<'a>(a: FractionRawMut<'a, T>, b: &FractionRaw<T>);
 }
 
 macro_rules! checked_mul {

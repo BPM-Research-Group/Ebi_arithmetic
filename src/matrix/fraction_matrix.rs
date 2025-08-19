@@ -78,8 +78,8 @@ mod tests {
 
         let m3: FractionMatrix = vec![vec![f!(2, 5), f!(8, 3)]].try_into().unwrap();
 
-        println!("{:?}", m1);
-        println!("{:?}", m3);
+        // println!("{:?}", m1);
+        // println!("{:?}", m3);
 
         assert!(m1.inner_eq(&m3));
     }
@@ -94,8 +94,8 @@ mod tests {
             .try_into()
             .unwrap();
 
-        println!("{:?}", m1);
-        println!("{:?}", m3);
+        // println!("{:?}", m1);
+        // println!("{:?}", m3);
 
         assert!(m1.inner_eq(&m3));
     }

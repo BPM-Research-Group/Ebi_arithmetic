@@ -13,6 +13,7 @@ use crate::{
     ebi_number::One,
     exact::MaybeExact,
     fraction_exact::FractionExact,
+    fraction_raw::fraction_raw::FractionRaw,
     matrix::{ebi_matrix::EbiMatrix, loose_fraction::Type},
     pop_front_columns, push_columns,
 };
@@ -36,34 +37,6 @@ pub enum FractionMatrixExact {
 }
 
 impl FractionMatrixExact {
-    /// Obtains an element from the matrix.
-    /// This may be an expensive operation; consider using to_vec() to avoid some cloning.
-    pub fn get(&self, row: usize, column: usize) -> Option<FractionExact> {
-        let idx = self.index(row, column);
-        Some(match self {
-            FractionMatrixExact::U64 {
-                numerators,
-                denominators,
-                types,
-                ..
-            } => FractionExact::from((
-                *types.get(idx)?,
-                numerators.get(idx)?.clone(),
-                denominators.get(idx)?.clone(),
-            )),
-            FractionMatrixExact::BigInt {
-                numerators,
-                denominators,
-                types,
-                ..
-            } => FractionExact::from((
-                *types.get(idx)?,
-                numerators.get(idx)?.clone(),
-                denominators.get(idx)?.clone(),
-            )),
-        })
-    }
-
     /// Obtains all elements from the matrix.
     /// This may be an expensive operation.
     pub fn to_vec(self) -> Result<Vec<Vec<FractionExact>>> {
@@ -108,9 +81,31 @@ impl FractionMatrixExact {
     pub(crate) fn index(&self, row: usize, column: usize) -> usize {
         row * self.number_of_columns() + column
     }
+
+    pub(crate) fn clone_to_biguint(&self) -> FractionMatrixExact {
+        match self {
+            FractionMatrixExact::U64 {
+                number_of_columns,
+                number_of_rows,
+                types,
+                numerators,
+                denominators,
+            } => FractionMatrixExact::BigInt {
+                number_of_columns: *number_of_columns,
+                number_of_rows: *number_of_rows,
+                types: types.clone(),
+                numerators: numerators.iter().map(|f| f.to_biguint().unwrap()).collect(),
+                denominators: denominators
+                    .iter()
+                    .map(|f| f.to_biguint().unwrap())
+                    .collect(),
+            },
+            FractionMatrixExact::BigInt { .. } => self.clone(),
+        }
+    }
 }
 
-impl EbiMatrix for FractionMatrixExact {
+impl EbiMatrix<FractionExact> for FractionMatrixExact {
     fn new(number_of_columns: usize) -> Self {
         Self::U64 {
             number_of_columns,
@@ -435,6 +430,105 @@ impl EbiMatrix for FractionMatrixExact {
                     *number_of_columns
                 );
                 *number_of_columns -= number_of_columns_to_remove;
+            }
+        }
+    }
+
+    fn get(&self, row: usize, column: usize) -> Option<FractionExact> {
+        let idx = self.index(row, column);
+        Some(match self {
+            FractionMatrixExact::U64 {
+                numerators,
+                denominators,
+                types,
+                ..
+            } => FractionExact::from((
+                *types.get(idx)?,
+                numerators.get(idx)?.clone(),
+                denominators.get(idx)?.clone(),
+            )),
+            FractionMatrixExact::BigInt {
+                numerators,
+                denominators,
+                types,
+                ..
+            } => FractionExact::from((
+                *types.get(idx)?,
+                numerators.get(idx)?.clone(),
+                denominators.get(idx)?.clone(),
+            )),
+        })
+    }
+
+    fn set(&mut self, row: usize, column: usize, value: FractionExact) {
+        match self {
+            FractionMatrixExact::U64 {
+                numerators,
+                denominators,
+                types,
+                number_of_columns,
+                ..
+            } => {
+                let idx = row * *number_of_columns + column;
+                //check whether the new value fits in u64
+                if let Some(FractionRaw(typee, nom, den)) = FractionRaw::try_u64(&value) {
+                    //value fits in u64; set
+                    types[idx] = typee;
+                    numerators[idx] = nom;
+                    denominators[idx] = den;
+                } else {
+                    //value does not fit in u64; tranform the entire matrix
+                    let mut new_m = self.clone_to_biguint();
+                    new_m.set(row, column, value);
+                    std::mem::swap(self, &mut new_m);
+                }
+            }
+            FractionMatrixExact::BigInt {
+                numerators,
+                denominators,
+                types,
+                number_of_columns,
+                ..
+            } => {
+                let idx = row * *number_of_columns + column;
+                types[idx] = (&value.0).into();
+                numerators[idx] = match value.0.numer() {
+                    Some(x) => x.clone(),
+                    None => BigUint::zero(),
+                };
+                denominators[idx] = match value.0.denom() {
+                    Some(x) => x.clone(),
+                    None => BigUint::zero(),
+                };
+            }
+        }
+    }
+
+    fn set_one(&mut self, row: usize, column: usize) {
+        match self {
+            FractionMatrixExact::U64 {
+                types,
+                numerators,
+                denominators,
+                number_of_columns,
+                ..
+            } => {
+                let idx = row * *number_of_columns + column;
+                types[idx] = Type::Plus;
+                numerators[idx] = 1;
+                denominators[idx] = 1;
+            }
+            FractionMatrixExact::BigInt {
+                types,
+                numerators,
+                denominators,
+                number_of_columns,
+                ..
+            } => {
+                let idx = row * *number_of_columns + column;
+                types[idx] = Type::Plus;
+                numerators[idx] = BigUint::one();
+                denominators[idx] = BigUint::one();
             }
         }
     }

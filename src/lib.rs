@@ -24,4 +24,13 @@ pub mod matrix {
     pub mod identity_minus;
     pub mod loose_fraction;
     pub mod mul;
+    pub mod gauss_jordan;
+}
+
+pub mod fraction_raw {
+    pub mod fraction_raw;
+    pub mod getters;
+    pub mod mul_assign;
+    pub mod div_assign;
+    pub mod recip;
 }

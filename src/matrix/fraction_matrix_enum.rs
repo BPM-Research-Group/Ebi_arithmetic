@@ -1,3 +1,5 @@
+use std::mem;
+
 use anyhow::{Error, Result, anyhow};
 
 use crate::{
@@ -19,18 +21,6 @@ pub enum FractionMatrixEnum {
 }
 
 impl FractionMatrixEnum {
-    /// Obtains an element from the matrix.
-    /// This may be an expensive operation.
-    pub fn get(&self, row: usize, column: usize) -> Option<FractionEnum> {
-        Some(match self {
-            FractionMatrixEnum::Approx(m) => FractionEnum::Approx(m.get(row, column)?.0),
-            FractionMatrixEnum::Exact(m) => FractionEnum::Exact(m.get(row, column)?.0),
-            FractionMatrixEnum::CannotCombineExactAndApprox => {
-                FractionEnum::CannotCombineExactAndApprox
-            }
-        })
-    }
-
     pub fn to_vec(self) -> Result<Vec<Vec<FractionEnum>>> {
         match self {
             FractionMatrixEnum::Approx(m) => Ok(m
@@ -50,7 +40,7 @@ impl FractionMatrixEnum {
     }
 }
 
-impl EbiMatrix for FractionMatrixEnum {
+impl EbiMatrix<FractionEnum> for FractionMatrixEnum {
     fn new(number_of_columns: usize) -> Self {
         if exact::is_exact_globally() {
             Self::Exact(FractionMatrixExact::new(number_of_columns))
@@ -109,12 +99,41 @@ impl EbiMatrix for FractionMatrixEnum {
 
     fn pop_front_columns(&mut self, number_of_columns_to_remove: usize) {
         match self {
-            FractionMatrixEnum::Approx(m) => {
-                m.pop_front_columns(number_of_columns_to_remove)
+            FractionMatrixEnum::Approx(m) => m.pop_front_columns(number_of_columns_to_remove),
+            FractionMatrixEnum::Exact(m) => m.pop_front_columns(number_of_columns_to_remove),
+            FractionMatrixEnum::CannotCombineExactAndApprox => {}
+        }
+    }
+
+    fn get(&self, row: usize, column: usize) -> Option<FractionEnum> {
+        Some(match self {
+            FractionMatrixEnum::Approx(m) => FractionEnum::Approx(m.get(row, column)?.0),
+            FractionMatrixEnum::Exact(m) => FractionEnum::Exact(m.get(row, column)?.0),
+            FractionMatrixEnum::CannotCombineExactAndApprox => {
+                FractionEnum::CannotCombineExactAndApprox
             }
-            FractionMatrixEnum::Exact(m) => {
-                m.pop_front_columns(number_of_columns_to_remove)
+        })
+    }
+
+    fn set(&mut self, row: usize, column: usize, value: FractionEnum) {
+        if let FractionMatrixEnum::Approx(m) = self {
+            if let FractionEnum::Approx(f) = value {
+                m.set(row, column, FractionF64(f));
+                return;
             }
+        } else if let FractionMatrixEnum::Exact(m) = self {
+            if let FractionEnum::Exact(f) = value {
+                m.set(row, column, FractionExact(f));
+                return;
+            }
+        }
+        mem::swap(self, &mut FractionMatrixEnum::CannotCombineExactAndApprox);
+    }
+
+    fn set_one(&mut self, row: usize, column: usize) {
+        match self {
+            FractionMatrixEnum::Approx(m) => m.set_one(row, column),
+            FractionMatrixEnum::Exact(m) => m.set_one(row, column),
             FractionMatrixEnum::CannotCombineExactAndApprox => {}
         }
     }

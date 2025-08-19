@@ -1,11 +1,13 @@
+use std::fmt::Display;
+
 use crate::{
-    ebi_number::Zero, exact::MaybeExact, fraction_f64::FractionF64, matrix::ebi_matrix::EbiMatrix,
-    pop_front_columns, push_columns,
+    ebi_number::Zero, exact::MaybeExact, fraction::EPSILON, fraction_f64::FractionF64,
+    matrix::ebi_matrix::EbiMatrix, pop_front_columns, push_columns,
 };
 use anyhow::{Error, Result, anyhow};
 use itertools::Itertools;
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Debug)]
 pub struct FractionMatrixF64 {
     pub(crate) values: Vec<f64>,
     pub(crate) number_of_rows: usize,
@@ -35,7 +37,7 @@ impl FractionMatrixF64 {
     }
 }
 
-impl EbiMatrix for FractionMatrixF64 {
+impl EbiMatrix<FractionF64> for FractionMatrixF64 {
     fn new(number_of_columns: usize) -> Self {
         Self {
             values: vec![],
@@ -57,11 +59,17 @@ impl EbiMatrix for FractionMatrixF64 {
     }
 
     fn eq(&mut self, other: &mut Self) -> bool {
-        self == other
+        self.inner_eq(other)
     }
 
     fn inner_eq(&self, other: &Self) -> bool {
-        self == other
+        self.number_of_columns == other.number_of_columns
+            && self.number_of_rows == other.number_of_rows
+            && self
+                .values
+                .iter()
+                .zip(other.values.iter())
+                .all(|(a, b)| (a - b).abs() < EPSILON)
     }
 
     fn push_columns(&mut self, number_of_columns_to_add: usize) {
@@ -83,6 +91,21 @@ impl EbiMatrix for FractionMatrixF64 {
             self.number_of_columns
         );
         self.number_of_columns -= number_of_columns_to_remove;
+    }
+
+    fn get(&self, row: usize, column: usize) -> Option<FractionF64> {
+        let idx = self.index(row, column);
+        Some(FractionF64(*self.values.get(idx)?))
+    }
+
+    fn set(&mut self, row: usize, column: usize, value: FractionF64) {
+        let idx = self.index(row, column);
+        self.values[idx] = value.0;
+    }
+
+    fn set_one(&mut self, row: usize, column: usize) {
+        let idx = self.index(row, column);
+        self.values[idx] = 1f64;
     }
 }
 
@@ -129,6 +152,24 @@ impl MaybeExact for FractionMatrixF64 {
 
     fn extract_exact(&self) -> anyhow::Result<&Self::Exact> {
         Err(anyhow!("cannot extract a fraction from a float"))
+    }
+}
+
+impl Display for FractionMatrixF64 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{{{{")?;
+        for (i, row) in self.values.chunks(self.number_of_columns).enumerate() {
+            for (j, fraction) in row.iter().enumerate() {
+                write!(f, "{}", fraction.to_string())?;
+                if j < row.len() - 1 {
+                    write!(f, ", ")?;
+                }
+            }
+            if i + 1 < self.number_of_rows {
+                write!(f, "}},\n{{")?;
+            }
+        }
+        write!(f, "}}}}")
     }
 }
 

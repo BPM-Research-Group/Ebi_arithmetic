@@ -1,6 +1,9 @@
-use crate::{exact::MaybeExact, matrix::identity_minus::IdentityMinus};
+use crate::{
+    exact::MaybeExact,
+    matrix::{gauss_jordan::GaussJordan, identity_minus::IdentityMinus},
+};
 
-pub trait EbiMatrix: Clone + MaybeExact + IdentityMinus {
+pub trait EbiMatrix<T>: Clone + MaybeExact + IdentityMinus + GaussJordan {
     /// Creates a new reduced matrix with no rows and the given number of columns.
     fn new(number_of_columns: usize) -> Self;
 
@@ -32,6 +35,19 @@ pub trait EbiMatrix: Clone + MaybeExact + IdentityMinus {
 
     /// Removes columsn from the left of the matrix.
     fn pop_front_columns(&mut self, number_of_columns_to_remove: usize);
+
+    /// Gets a particular value of the matrix, if it exists.
+    /// This may be an expensive operation.
+    fn get(&self, row: usize, column: usize) -> Option<T>;
+
+    /// Sets a particular value of the matrix, if the row and column exist.
+    /// If row and column do not exist, behaviour is undefined, and may panic.
+    /// Prefer set_one if one is the value you're setting.
+    fn set(&mut self, row: usize, column: usize, value: T);
+
+    /// Sets a particular value of the matrix to one, if the row and column exist.
+    /// If row and column do not exist, behaviour is undefined, and may panic.
+    fn set_one(&mut self, row: usize, column: usize);
 }
 
 // shared macros
