@@ -1,4 +1,7 @@
-use std::mem;
+use std::{
+    fmt::{Debug, Display},
+    mem,
+};
 
 use anyhow::{Error, Result, anyhow};
 
@@ -243,6 +246,16 @@ impl TryFrom<Vec<Vec<FractionEnum>>> for FractionMatrixEnum {
             } else {
                 Ok(Self::Approx(FractionMatrixF64::new(0)))
             }
+        }
+    }
+}
+
+impl Display for FractionMatrixEnum {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Approx(m) => Display::fmt(m, f),
+            Self::Exact(m) => Display::fmt(m, f),
+            Self::CannotCombineExactAndApprox => write!(f, "CannotCombineExactAndApprox"),
         }
     }
 }

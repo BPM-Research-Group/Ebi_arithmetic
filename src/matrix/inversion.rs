@@ -1,16 +1,12 @@
-use std::{
-    fmt::{Debug, Display},
-    mem,
-    ops::{DivAssign, MulAssign, SubAssign},
-    sync::atomic::AtomicBool,
-};
+use std::mem;
 
 use crate::{
     ebi_number::{One, Zero},
-    fraction_raw::{getters::FractionRawGetter, recip::Recip},
+    fraction_raw::{getters::FractionRawGetter, recip::Recip, zero::IsZero},
     matrix::{
-        ebi_matrix::EbiMatrix, fraction_matrix_exact::FractionMatrixExact,
-        fraction_matrix_f64::FractionMatrixF64, gauss_jordan::GaussJordan,
+        ebi_matrix::EbiMatrix, fraction_matrix_enum::FractionMatrixEnum,
+        fraction_matrix_exact::FractionMatrixExact, fraction_matrix_f64::FractionMatrixF64,
+        gauss_jordan::GaussJordan,
     },
 };
 use anyhow::{Result, anyhow};
@@ -78,7 +74,6 @@ impl Inversion for FractionMatrixF64 {
         self.push_columns(self.number_of_rows);
         for i in 0..self.number_of_rows {
             let idx_ii = self.index(i, self.number_of_rows + i);
-            let idx_ii = self.index(i, self.number_of_rows + i);
             self.values[idx_ii] = f64::one();
         }
 
@@ -99,7 +94,60 @@ impl Inversion for FractionMatrixF64 {
 }
 
 macro_rules! inverse {
-    () => {};
+    ($t:ident, $number_of_rows:expr, $types:expr, $numerators:expr, $denominators:expr, $self:ident) => {
+        //optimisation: size-one matrix
+        if $number_of_rows.is_one() {
+            if $numerators[0].is_zero() {
+                return Err(anyhow!("matrix is not invertible: determinant is zero"));
+            }
+
+            $t::get_mut(0, $types, $numerators, $denominators).recip();
+            return Ok($self);
+        }
+
+        //optimisation: size-two matrix
+        if *$number_of_rows == 2 {
+            //compute determinant
+            let mut det = $t::get_clone(0, &$types, &$numerators, &$denominators);
+            det *= $t::get_ref(3, &$types, &$numerators, &$denominators);
+            let mut det2 = $t::get_clone(1, &$types, &$numerators, &$denominators);
+            det2 *= $t::get_ref(2, &$types, &$numerators, &$denominators);
+            det -= &det2;
+
+            if det.is_zero() {
+                return Err(anyhow!("matrix is not invertible: determinant is zero"));
+            }
+
+            // log::debug!("determinant {}", det);
+
+            det.recip();
+
+            //perform inverse
+            let (typee1, typee2) = $types.split_at_mut(2);
+            let (num1, num2) = $numerators.split_at_mut(2);
+            let (den1, den2) = $denominators.split_at_mut(2);
+            mem::swap(&mut typee1[0], &mut typee2[1]);
+            mem::swap(&mut num1[0], &mut num2[1]);
+            mem::swap(&mut den1[0], &mut den2[1]);
+
+            //self.values[0] *= &det;
+            let mut f = $t::get_mut(0, $types, $numerators, $denominators);
+            f *= &det;
+
+            // self.values[3] *= &det;
+            let mut f = $t::get_mut(3, $types, $numerators, $denominators);
+            f *= &det;
+
+            //self.values[2] *= -&det;
+            let mut f = $t::get_mut(2, $types, $numerators, $denominators);
+            f *= -&det;
+
+            //self.values[1] *= -det;
+            let mut f = $t::get_mut(1, $types, $numerators, $denominators);
+            f *= -det;
+            return Ok($self);
+        }
+    };
 }
 
 impl Inversion for FractionMatrixExact {
@@ -115,13 +163,13 @@ impl Inversion for FractionMatrixExact {
 
         match &mut self {
             FractionMatrixExact::U64 {
-                number_of_columns,
                 number_of_rows,
                 types,
                 numerators,
                 denominators,
+                ..
             } => {
-                todo!()
+                inverse!(u64, number_of_rows, types, numerators, denominators, self);
             }
             FractionMatrixExact::BigInt {
                 number_of_rows,
@@ -130,58 +178,14 @@ impl Inversion for FractionMatrixExact {
                 denominators,
                 ..
             } => {
-                //optimisation: size-one matrix
-                if number_of_rows.is_one() {
-                    if numerators[0].is_zero() {
-                        return Err(anyhow!("matrix is not invertible: determinant is zero"));
-                    }
-
-                    BigUint::get_mut(0, types, numerators, denominators).recip();
-                    return Ok(self);
-                }
-
-                //optimisation: size-two matrix
-                if *number_of_rows == 2 {
-                    //compute determinant
-                    let mut det = BigUint::get_clone(0, &types, &numerators, &denominators);
-                    det *= BigUint::get_ref(3, &types, &numerators, &denominators);
-                    let mut det2 = BigUint::get_clone(1, &types, &numerators, &denominators);
-                    det2 *= BigUint::get_ref(2, &types, &numerators, &denominators);
-                    det -= &det2;
-
-                    if det.is_zero() {
-                        return Err(anyhow!("matrix is not invertible: determinant is zero"));
-                    }
-
-                    // log::debug!("determinant {}", det);
-
-                    det.recip();
-
-                    //perform inverse
-                    let (typee1, typee2) = types.split_at_mut(2);
-                    let (num1, num2) = numerators.split_at_mut(2);
-                    let (den1, den2) = denominators.split_at_mut(2);
-                    mem::swap(&mut typee1[0], &mut typee2[1]);
-                    mem::swap(&mut num1[0], &mut num2[1]);
-                    mem::swap(&mut den1[0], &mut den2[1]);
-
-                    //self.values[0] *= &det;
-                    let mut f = BigUint::get_mut(0, types, numerators, denominators);
-                    f *= &det;
-
-                    // self.values[3] *= &det;
-                    let mut f = BigUint::get_mut(3, types, numerators, denominators);
-                    f *= &det;
-
-                    //self.values[2] *= -&det;
-                    let mut f = BigUint::get_mut(2, types, numerators, denominators);
-                    f *= -&det;
-
-                    //self.values[1] *= -det;
-                    let mut f = BigUint::get_mut(1, types, numerators, denominators);
-                    f *= -det;
-                    return Ok(self);
-                }
+                inverse!(
+                    BigUint,
+                    number_of_rows,
+                    types,
+                    numerators,
+                    denominators,
+                    self
+                );
             }
         };
 
@@ -209,10 +213,24 @@ impl Inversion for FractionMatrixExact {
     }
 }
 
+impl Inversion for FractionMatrixEnum {
+    fn invert(self) -> Result<Self>
+    where
+        Self: Sized,
+    {
+        match self {
+            FractionMatrixEnum::Approx(m) => Ok(FractionMatrixEnum::Approx(m.invert()?)),
+            FractionMatrixEnum::Exact(m) => Ok(FractionMatrixEnum::Exact(m.invert()?)),
+            FractionMatrixEnum::CannotCombineExactAndApprox => {
+                Err(anyhow!("cannot combine exact and approximate arithmetic"))
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{
-        fraction_exact::FractionExact,
         fraction_f64::FractionF64,
         matrix::{
             ebi_matrix::EbiMatrix, fraction_matrix_exact::FractionMatrixExact,
@@ -264,7 +282,7 @@ mod tests {
         .try_into()
         .unwrap();
 
-        let i: FractionMatrixExact = vec![
+        let mut i: FractionMatrixExact = vec![
             vec![1.into(), 0.into(), 0.into(), 0.into()],
             vec![0.into(), 1.into(), 0.into(), (3, 5).into()],
             vec![0.into(), (3, 4).into(), 1.into(), (9, 20).into()],
@@ -278,6 +296,6 @@ mod tests {
         // println!("\t\tinverted matrix    {:?}", m);
         // println!("\t\tcorrect inverse    {:?}", i);
 
-        assert!(m.inner_eq(&i));
+        assert!(m.eq(&mut i));
     }
 }

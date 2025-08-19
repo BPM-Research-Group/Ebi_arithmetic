@@ -20,9 +20,6 @@ pub type FractionMatrix = super::fraction_matrix_exact::FractionMatrixExact;
 
 //======================== common code ========================//
 
-use std::io::Write;
-
-use anyhow::Result;
 
 #[macro_export]
 macro_rules! push_columns {
@@ -46,27 +43,6 @@ macro_rules! pop_front_columns {
             );
         }
     };
-}
-
-pub(crate) fn display_as_matrix<T>(values: &[T], number_of_columns: usize) -> Result<String>
-where
-    T: std::fmt::Display,
-{
-    let mut f = vec![];
-    write!(f, "{{{{")?;
-    for (i, row) in values.chunks(number_of_columns).enumerate() {
-        for (j, fraction) in row.iter().enumerate() {
-            write!(f, "{}", fraction.to_string())?;
-            if j < row.len() - 1 {
-                write!(f, ", ")?;
-            }
-        }
-        if i + 1 < (values.len() / number_of_columns) {
-            write!(f, "}},\n {{")?;
-        }
-    }
-    write!(f, "}}}}")?;
-    Ok(str::from_utf8(&f)?.to_owned())
 }
 
 //======================== tests ========================//
@@ -155,7 +131,7 @@ mod tests {
 
     #[test]
     fn fraction_matrix_inverse() {
-        let mut m: FractionMatrix = vec![
+        let mut m1: FractionMatrix = vec![
             vec![1.into(), 0.into(), 0.into(), 0.into()],
             vec![0.into(), 1.into(), 0.into(), Fraction::from((-3, 5))],
             vec![0.into(), Fraction::from((-3, 4)), 1.into(), 0.into()],
@@ -164,7 +140,7 @@ mod tests {
         .try_into()
         .unwrap();
 
-        let i: FractionMatrix = vec![
+        let mut m2: FractionMatrix = vec![
             vec![1.into(), 0.into(), 0.into(), 0.into()],
             vec![0.into(), 1.into(), 0.into(), Fraction::from((3, 5))],
             vec![
@@ -178,8 +154,11 @@ mod tests {
         .try_into()
         .unwrap();
 
-        m.invert().unwrap();
+        m1 = m1.invert().unwrap();
 
-        assert_eq!(m, i);
+        println!("{}", m1);
+        println!("{}", m2);
+
+        assert!(m1.eq(&mut m2));
     }
 }

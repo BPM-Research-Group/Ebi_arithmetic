@@ -13,7 +13,7 @@ use crate::{
     ebi_number::One,
     exact::MaybeExact,
     fraction_exact::FractionExact,
-    fraction_raw::fraction_raw::FractionRaw,
+    fraction_raw::{fraction_raw::FractionRaw, getters::FractionRawGetter},
     matrix::{ebi_matrix::EbiMatrix, loose_fraction::Type},
     pop_front_columns, push_columns,
 };
@@ -615,6 +615,49 @@ impl MaybeExact for FractionMatrixExact {
 
     fn extract_exact(&self) -> anyhow::Result<&Self::Exact> {
         Ok(self)
+    }
+}
+
+impl std::fmt::Display for FractionMatrixExact {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{{{{")?;
+
+        match self {
+            FractionMatrixExact::U64 {
+                number_of_columns,
+                number_of_rows,
+                types,
+                numerators,
+                denominators,
+            } => todo!(),
+            FractionMatrixExact::BigInt {
+                number_of_columns,
+                number_of_rows,
+                types,
+                numerators,
+                denominators,
+            } => {
+                for i in 0..types.len() {
+                    let frac = BigUint::get_ref(i, types, numerators, denominators);
+                    write!(f, "{}", frac)?;
+
+                    if i + 1 % number_of_columns == 0 {
+                        //comma or something
+                        if i + 1 == types.len() {
+                            //end of matrix
+                            write!(f, "}}")?;
+                        } else {
+                            //end of row
+                            write!(f, "}},\n {{")?;
+                        }
+                    } else {
+                        write!(f, ", ")?;
+                    }
+                }
+            }
+        }
+
+        write!(f, "}}}}")
     }
 }
 

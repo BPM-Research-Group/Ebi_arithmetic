@@ -33,4 +33,8 @@ pub mod fraction_raw {
     pub mod mul_assign;
     pub mod div_assign;
     pub mod recip;
+    pub mod one;
+    pub mod zero;
+    pub mod neg;
+    pub mod sub_assign;
 }

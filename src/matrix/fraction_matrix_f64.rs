@@ -1,5 +1,3 @@
-use std::fmt::Display;
-
 use crate::{
     ebi_number::Zero, exact::MaybeExact, fraction::EPSILON, fraction_f64::FractionF64,
     matrix::ebi_matrix::EbiMatrix, pop_front_columns, push_columns,
