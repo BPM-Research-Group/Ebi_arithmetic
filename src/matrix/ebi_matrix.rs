@@ -3,7 +3,9 @@ use crate::{
     matrix::{gauss_jordan::GaussJordan, identity_minus::IdentityMinus},
 };
 
-pub trait EbiMatrix<T>: Clone + MaybeExact + IdentityMinus + GaussJordan {
+pub trait EbiMatrix<T>:
+    Clone + MaybeExact + IdentityMinus + GaussJordan + TryFrom<(usize, Vec<T>)>
+{
     /// Creates a new reduced matrix with no rows and the given number of columns.
     fn new(number_of_columns: usize) -> Self;
 

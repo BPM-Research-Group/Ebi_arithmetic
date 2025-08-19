@@ -534,6 +534,61 @@ impl EbiMatrix<FractionExact> for FractionMatrixExact {
     }
 }
 
+impl TryFrom<(usize, Vec<FractionExact>)> for FractionMatrixExact {
+    type Error = Error;
+
+    fn try_from(value: (usize, Vec<FractionExact>)) -> Result<Self> {
+        let (number_of_columns, values) = value;
+        let number_of_rows = values.len() / number_of_columns;
+
+        if number_of_rows * number_of_columns != values.len() {
+            return Err(anyhow!("some cells of the matrix are not provided"));
+        }
+
+        if number_of_rows != 0 {
+            //has rows
+
+            let mut types = Vec::with_capacity(number_of_rows * number_of_columns);
+            for v in values.iter() {
+                types.push((&v.0).into());
+            }
+
+            let numerators = values
+                .iter()
+                .map(|cell| match cell.0.numer() {
+                    Some(x) => x.clone(),
+                    None => BigUint::zero(),
+                })
+                .collect::<Vec<_>>();
+
+            let denominators = values
+                .into_iter()
+                .map(|cell| match cell.0.denom() {
+                    Some(x) => x.clone(),
+                    None => BigUint::zero(),
+                })
+                .collect::<Vec<_>>();
+
+            Ok(Self::BigInt {
+                number_of_columns,
+                number_of_rows,
+                types,
+                numerators,
+                denominators,
+            })
+        } else {
+            //no rows
+            Ok(Self::BigInt {
+                number_of_columns: 0,
+                number_of_rows: 0,
+                types: vec![],
+                numerators: vec![],
+                denominators: vec![],
+            })
+        }
+    }
+}
+
 impl TryFrom<Vec<Vec<FractionExact>>> for FractionMatrixExact {
     type Error = Error;
 

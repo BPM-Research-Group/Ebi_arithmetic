@@ -74,6 +74,10 @@ impl Mul for &FractionMatrixExact {
                                 //no overlflow; continue
                             } else {
                                 //overflow detected
+                                println!(
+                                    "overflow with add_assign_mul {}/{}",
+                                    numerators[idx_ik], denominators[idx_ik]
+                                );
                                 new_types[idx_ij] = Type::Plus;
                                 last_attempted = Some((i, j));
                                 break 'outer;
@@ -339,12 +343,23 @@ impl Mul for &FractionMatrixEnum {
 #[cfg(test)]
 mod tests {
 
+    use std::time::Instant;
+
+    use num::integer::Roots;
+    use num_bigint::ToBigUint;
+    use rand::{Rng, RngCore};
+
     use crate::{
         ebi_number::{One, Zero},
+        exact::MaybeExact,
         f, f0, f1,
         fraction::Fraction,
-        matrix::ebi_matrix::EbiMatrix,
-        matrix::fraction_matrix::FractionMatrix,
+        fraction_f64::FractionF64,
+        matrix::{
+            ebi_matrix::EbiMatrix, fraction_matrix::FractionMatrix,
+            fraction_matrix_exact::FractionMatrixExact, fraction_matrix_f64::FractionMatrixF64,
+            loose_fraction::Type,
+        },
     };
 
     #[test]
@@ -526,5 +541,116 @@ mod tests {
         ];
 
         assert_eq!(prod.to_vec().unwrap(), m3);
+    }
+
+    #[test]
+    fn bench_mul() {
+        let repeat = 5;
+        let size = 100_usize;
+
+        let mut rng = rand::thread_rng();
+        let sqrt = 100_u64;
+        let types = vec![Type::Plus; size * size];
+        let numerators = vec![rng.gen_range(0..sqrt); size * size];
+        let denominators = vec![rng.gen_range(0..sqrt); size * size];
+
+        let matrices_f64: Vec<FractionMatrixF64> = (0..repeat)
+            .into_iter()
+            .map(|i| FractionMatrixF64 {
+                number_of_columns: size,
+                number_of_rows: size,
+                values: types
+                    .iter()
+                    .zip(numerators.iter())
+                    .zip(denominators.iter())
+                    .enumerate()
+                    .map(|(x, ((_typee, nom), den))| {
+                        if x == i {
+                            FractionF64::from((*nom as i64, den + 1)).0
+                        } else {
+                            FractionF64::from((*nom as i64, *den)).0
+                        }
+                    })
+                    .collect::<Vec<_>>(),
+            })
+            .collect();
+
+        let matrices_exact_bigint: Vec<FractionMatrixExact> = (0..repeat)
+            .into_iter()
+            .map(|i| FractionMatrixExact::BigInt {
+                number_of_columns: size,
+                number_of_rows: size,
+                types: types.clone(),
+                numerators: numerators.iter().map(|i| i.to_biguint().unwrap()).collect(),
+                denominators: denominators
+                    .iter()
+                    .enumerate()
+                    .map(|(x, i)| {
+                        if x as u64 == *i {
+                            (i + 1).to_biguint().unwrap()
+                        } else {
+                            i.to_biguint().unwrap()
+                        }
+                    })
+                    .collect(),
+            })
+            .collect();
+
+        let matrices_exact_u64: Vec<FractionMatrixExact> = (0..repeat)
+            .into_iter()
+            .map(|i| FractionMatrixExact::U64 {
+                number_of_columns: size,
+                number_of_rows: size,
+                types: types.clone(),
+                numerators: numerators.clone(),
+                denominators: denominators
+                    .iter()
+                    .enumerate()
+                    .map(|(x, i)| if x as u64 == *i { i + 1 } else { *i })
+                    .collect(),
+            })
+            .collect();
+
+        //exact biguint
+        {
+            let before = Instant::now();
+            for m in matrices_exact_bigint {
+                let m3 = (&m * &m).unwrap();
+
+                if !m3.is_exact() {
+                    panic!()
+                }
+            }
+
+            println!("exact BigUint: {:.2?}", before.elapsed());
+        }
+
+        //exact u64
+        {
+            let before = Instant::now();
+            for m in matrices_exact_u64 {
+                let m3 = (&m * &m).unwrap();
+
+                if !m3.is_exact() {
+                    panic!()
+                }
+            }
+
+            println!("exact u64:     {:.2?}", before.elapsed());
+        }
+
+        //f64
+        {
+            let before = Instant::now();
+            for m in matrices_f64 {
+                let m3 = (&m * &m).unwrap();
+
+                if m3.is_exact() {
+                    panic!()
+                }
+            }
+
+            println!("approx f64:    {:.2?}", before.elapsed());
+        }
     }
 }

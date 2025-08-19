@@ -160,6 +160,86 @@ impl MaybeExact for FractionMatrixEnum {
     }
 }
 
+impl TryFrom<(usize, Vec<FractionEnum>)> for FractionMatrixEnum {
+    type Error = Error;
+
+    fn try_from(value: (usize, Vec<FractionEnum>)) -> Result<Self> {
+        let (number_of_columns, values) = value;
+        let number_of_rows = values.len() / number_of_columns;
+
+        if number_of_rows * number_of_columns != values.len() {
+            return Err(anyhow!("some cells of the matrix are not provided"));
+        }
+
+        if number_of_rows > 0 {
+            if let Some(x) = values.iter().next() {
+                //proper matrix
+                if x.is_exact() {
+                    //exact mode
+                    let mut new_values = Vec::with_capacity(values.len());
+                    for f in values {
+                        match f {
+                            FractionEnum::Exact(f) => new_values.push(FractionExact(f)),
+                            FractionEnum::Approx(_) => {
+                                return Err(anyhow!(
+                                    "cannot combine approximate and exact arithmetic"
+                                ));
+                            }
+                            FractionEnum::CannotCombineExactAndApprox => {
+                                return Err(anyhow!(
+                                    "cannot combine approximate and exact arithmetic"
+                                ));
+                            }
+                        }
+                    }
+
+                    let m: FractionMatrixExact = (number_of_columns, new_values).try_into()?;
+                    Ok(Self::Exact(m))
+                } else {
+                    //approximate mode
+                    let mut new_values = Vec::with_capacity(values.len());
+                    for f in values {
+                        match f {
+                            FractionEnum::Exact(_) => {
+                                return Err(anyhow!(
+                                    "cannot combine approximate and exact arithmetic"
+                                ));
+                            }
+                            FractionEnum::Approx(f) => new_values.push(FractionF64(f)),
+                            FractionEnum::CannotCombineExactAndApprox => {
+                                return Err(anyhow!(
+                                    "cannot combine approximate and exact arithmetic"
+                                ));
+                            }
+                        }
+                    }
+
+                    let m: FractionMatrixF64 = (number_of_columns, new_values).try_into()?;
+                    Ok(Self::Approx(m))
+                }
+            } else {
+                //no columns
+                if is_exact_globally() {
+                    let new_rows = vec![vec![]; values.len()];
+                    let m: FractionMatrixExact = new_rows.try_into()?;
+                    Ok(Self::Exact(m))
+                } else {
+                    let new_rows = vec![vec![]; values.len()];
+                    let m: FractionMatrixF64 = new_rows.try_into()?;
+                    Ok(Self::Approx(m))
+                }
+            }
+        } else {
+            //no rows
+            if is_exact_globally() {
+                Ok(Self::Exact(FractionMatrixExact::new(0)))
+            } else {
+                Ok(Self::Approx(FractionMatrixF64::new(0)))
+            }
+        }
+    }
+}
+
 impl TryFrom<Vec<Vec<FractionEnum>>> for FractionMatrixEnum {
     type Error = Error;
 

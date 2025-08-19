@@ -107,6 +107,38 @@ impl EbiMatrix<FractionF64> for FractionMatrixF64 {
     }
 }
 
+impl TryFrom<(usize, Vec<FractionF64>)> for FractionMatrixF64 {
+    type Error = Error;
+
+    fn try_from(value: (usize, Vec<FractionF64>)) -> Result<Self> {
+        let (number_of_columns, values) = value;
+        let number_of_rows = values.len() / number_of_columns;
+
+        if number_of_rows * number_of_columns != values.len() {
+            return Err(anyhow!("some cells of the matrix are not provided"));
+        }
+
+        if number_of_rows != 0 {
+            //has rows
+
+            let values = values.into_iter().map(|cell| cell.0).collect::<Vec<_>>();
+
+            Ok(Self {
+                number_of_columns,
+                number_of_rows,
+                values,
+            })
+        } else {
+            //no rows
+            Ok(Self {
+                number_of_columns: 0,
+                number_of_rows: 0,
+                values: vec![],
+            })
+        }
+    }
+}
+
 impl TryFrom<Vec<Vec<FractionF64>>> for FractionMatrixF64 {
     type Error = Error;
     fn try_from(values: Vec<Vec<FractionF64>>) -> Result<Self> {
