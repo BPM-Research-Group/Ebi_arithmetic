@@ -31,6 +31,11 @@ rayon = "1.11.0"
 itertools = "0.14.0"
 ndarray = "0.16.1"
 
+[dependencies.rug]
+version = "*"
+default-features = false
+features = ["integer", "rational", "std"]
+
 [profile.release]
 debug = false
 strip = true
