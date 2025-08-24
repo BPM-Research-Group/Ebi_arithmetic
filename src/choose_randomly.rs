@@ -1,15 +1,12 @@
 use anyhow::{Context, Result, anyhow};
 use fraction::{GenericFraction, Ratio, Sign};
-use num::BigUint;
+use malachite::rational::Rational;
+use num::{BigUint};
 use num_bigint::RandBigInt;
 use rand::Rng;
 
 use crate::{
-    exact::{MaybeExact, is_exact_globally},
-    fraction_enum::FractionEnum,
-    fraction_exact::FractionExact,
-    fraction_f64::FractionF64,
-    ebi_number::Zero,
+    ebi_number::Zero, exact::{is_exact_globally, MaybeExact}, fraction::{fraction_enum::FractionEnum, fraction_exact::FractionExact, fraction_f64::FractionF64}
 };
 
 pub trait ChooseRandomly {
@@ -52,7 +49,7 @@ pub type FractionRandomCache = FractionRandomCacheF64;
 pub type FractionRandomCache = FractionRandomCacheExact;
 
 pub enum FractionRandomCacheEnum {
-    Exact(Vec<fraction::BigFraction>, BigUint),
+    Exact(Vec<Rational>, BigUint),
     Approx(Vec<f64>),
 }
 

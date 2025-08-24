@@ -1,4 +1,25 @@
-pub trait EbiNumber: Zero + One + Infinite + Normal + Round + Clone {}
+use crate::fraction::{
+    fraction_enum::FractionEnum, fraction_exact::FractionExact, fraction_f64::FractionF64,
+};
+
+pub trait EbiNumber: Zero + One + Round + Clone {}
+
+impl EbiNumber for FractionEnum {}
+impl EbiNumber for FractionF64 {}
+impl EbiNumber for FractionExact {}
+impl EbiNumber for f32 {}
+impl EbiNumber for f64 {}
+impl EbiNumber for usize {}
+impl EbiNumber for u128 {}
+impl EbiNumber for u64 {}
+impl EbiNumber for u32 {}
+impl EbiNumber for u16 {}
+impl EbiNumber for u8 {}
+impl EbiNumber for i128 {}
+impl EbiNumber for i64 {}
+impl EbiNumber for i32 {}
+impl EbiNumber for i16 {}
+impl EbiNumber for i8 {}
 
 pub trait Zero: Sized {
     fn zero() -> Self;
@@ -21,7 +42,7 @@ pub trait One: Sized {
 }
 
 pub trait Signed: Sized {
-    fn abs(&self) -> Self;
+    fn abs(self) -> Self;
 
     /// Returns true if the number is positive and false if the number is zero or negative.
     fn is_positive(&self) -> bool;
@@ -42,33 +63,6 @@ pub trait Signed: Sized {
     }
 }
 
-pub trait Infinite: Signed {
-    /// Returns false if this value is positive infinity or negative infinity, and true otherwise.
-    fn is_finite(&self) -> bool {
-        !self.is_infinite()
-    }
-
-    /// Returns true if this value is positive infinity or negative infinity, and false otherwise.
-    fn is_infinite(&self) -> bool;
-
-    fn is_positive_infinite(&self) -> bool {
-        self.is_infinite() && self.is_positive()
-    }
-
-    fn is_negative_infinite(&self) -> bool {
-        self.is_infinite() && self.is_negative()
-    }
-}
-
-pub trait Normal: Infinite + Signed + Zero + Sized {
-    /// Returns true if the number is neither zero, infinite, subnormal, or NaN.
-    fn is_normal(&self) -> bool {
-        !self.is_zero() && !self.is_infinite() && !self.is_nan()
-    }
-
-    fn is_nan(&self) -> bool;
-}
-
 pub trait Round: Sized {
     /// Returns the largest integer less than or equal to `self`.
     fn floor(self) -> Self;
@@ -77,7 +71,7 @@ pub trait Round: Sized {
     fn ceil(self) -> Self;
 }
 
-pub trait Fractional: Sized {
+pub trait Recip: Sized {
     /// Takes the reciprocal (inverse) of a number, `1/x`.
     fn recip(&self) -> Self;
 }

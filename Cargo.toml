@@ -30,11 +30,7 @@ rand = "0.8.5"
 rayon = "1.11.0"
 itertools = "0.14.0"
 ndarray = "0.16.1"
-
-[dependencies.rug]
-version = "*"
-default-features = false
-features = ["integer", "rational", "std"]
+malachite = "0.6.1"
 
 [profile.release]
 debug = false

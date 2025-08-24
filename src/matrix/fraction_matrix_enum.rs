@@ -7,9 +7,6 @@ use anyhow::{Error, Result, anyhow};
 
 use crate::{
     exact::{self, MaybeExact, is_exact_globally},
-    fraction_enum::FractionEnum,
-    fraction_exact::FractionExact,
-    fraction_f64::FractionF64,
     matrix::{
         ebi_matrix::EbiMatrix, fraction_matrix_exact::FractionMatrixExact,
         fraction_matrix_f64::FractionMatrixF64,

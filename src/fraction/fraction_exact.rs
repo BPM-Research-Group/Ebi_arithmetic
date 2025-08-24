@@ -1,13 +1,8 @@
 use anyhow::{Error, Result, anyhow};
-use fraction::{BigFraction, BigUint, Fraction, GenericFraction, Sign};
-use num::{BigInt, One as NumOne, Zero as NumZero};
-use num_bigint::{ToBigInt, ToBigUint};
-use num_rational::Ratio;
-use rug::{Complete, Integer, Rational};
+use malachite::rational::Rational;
 use std::{
     borrow::Borrow,
     cmp::Ordering,
-    f64,
     hash::Hash,
     iter::Sum,
     ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign},
@@ -15,17 +10,10 @@ use std::{
     sync::Arc,
 };
 
-use crate::{
-    ebi_number::{EbiNumber, Infinite, Normal, One, Round, Signed, Zero},
-    exact::MaybeExact,
-    fraction::{ToExact, UInt},
-    matrix::loose_fraction::Type,
-};
+use crate::{ebi_number::Zero, exact::MaybeExact};
 
 #[derive(Clone)]
-pub struct FractionExact(Rational);
-
-impl EbiNumber for FractionExact {}
+pub struct FractionExact(pub(crate) Rational);
 
 impl MaybeExact for FractionExact {
     type Approximate = f64;
@@ -48,58 +36,6 @@ impl MaybeExact for FractionExact {
     }
 }
 
-impl Zero for FractionExact {
-    fn zero() -> Self {
-        Self(Rational::ZERO.clone())
-    }
-
-    fn is_zero(&self) -> bool {
-        &self.0 == Rational::ZERO
-    }
-}
-
-impl One for FractionExact {
-    fn one() -> Self {
-        FractionExact(Rational::ONE.clone())
-    }
-
-    fn is_one(&self) -> bool {
-        &self.0 == Rational::ONE
-    }
-}
-
-impl Signed for FractionExact {
-    fn abs(&self) -> Self {
-        Self(self.0.abs_ref().complete())
-    }
-
-    fn is_positive(&self) -> bool {
-        self.0.is_positive()
-    }
-
-    fn is_negative(&self) -> bool {
-        self.0.is_negative()
-    }
-
-    fn is_not_negative(&self) -> bool {
-        !self.is_negative()
-    }
-
-    fn is_not_positive(&self) -> bool {
-        !self.is_positive()
-    }
-}
-
-impl Round for FractionExact {
-    fn floor(self) -> Self {
-        Self(self.0.floor())
-    }
-
-    fn ceil(self) -> Self {
-        Self(self.0.ceil())
-    }
-}
-
 impl Default for FractionExact {
     fn default() -> Self {
         Self::zero()
@@ -112,7 +48,12 @@ impl FromStr for FractionExact {
     type Err = Error;
 
     fn from_str(s: &str) -> std::prelude::v1::Result<Self, Self::Err> {
-        Ok(Self(Rational::from_str(s)?))
+        Ok(Self(match Rational::from_str(s) {
+            Ok(x) => x,
+            Err(_) => {
+                return Err(anyhow!("parsing fraction failed"));
+            }
+        }))
     }
 }
 
@@ -140,7 +81,7 @@ macro_rules! from_1 {
     ($t:ident, $u:ident) => {
         impl From<($t, $u)> for FractionExact {
             fn from(value: ($t, $u)) -> Self {
-                Self(Rational::from(value))
+                Self(Rational::from(value.0) / Rational::from(value.1))
             }
         }
     };
@@ -154,7 +95,7 @@ macro_rules! from_2 {
             }
         }
 
-        from_1!($t, Integer);
+        // from_1!($t, Integer);
         from_1!($t, usize);
         from_1!($t, u8);
         from_1!($t, u16);
@@ -181,19 +122,6 @@ macro_rules! from_primitive {
     };
 }
 
-macro_rules! from_integer {
-    ($t:ident) => {
-        from_2!($t);
-
-        impl From<&$t> for FractionExact {
-            fn from(value: &$t) -> Self {
-                Self(Rational::from(value))
-            }
-        }
-    };
-}
-
-from_integer!(Integer);
 from_primitive!(usize);
 from_primitive!(u8);
 from_primitive!(u16);
@@ -265,7 +193,7 @@ impl Add<&FractionExact> for &FractionExact {
     type Output = FractionExact;
 
     fn add(self, rhs: &FractionExact) -> Self::Output {
-        FractionExact((&self.0 + &rhs.0).complete())
+        FractionExact(&self.0 + &rhs.0)
     }
 }
 
@@ -281,7 +209,7 @@ impl Sub<&FractionExact> for &FractionExact {
     type Output = FractionExact;
 
     fn sub(self, rhs: &FractionExact) -> Self::Output {
-        FractionExact((&self.0 - &rhs.0).complete())
+        FractionExact(&self.0 - &rhs.0)
     }
 }
 
@@ -297,7 +225,7 @@ impl Div<&FractionExact> for &FractionExact {
     type Output = FractionExact;
 
     fn div(self, rhs: &FractionExact) -> Self::Output {
-        FractionExact((&self.0 / &rhs.0).complete())
+        FractionExact(&self.0 / &rhs.0)
     }
 }
 
@@ -313,7 +241,7 @@ impl Mul<&FractionExact> for &FractionExact {
     type Output = FractionExact;
 
     fn mul(self, rhs: &FractionExact) -> Self::Output {
-        FractionExact((&self.0 * &rhs.0).complete())
+        FractionExact(&self.0 * &rhs.0)
     }
 }
 
@@ -323,7 +251,7 @@ macro_rules! binary_operator {
             type Output = FractionExact;
 
             fn add(self, rhs: $t) -> Self::Output {
-                Self(self.0 + rhs)
+                Self(self.0 + Rational::from(rhs))
             }
         }
 
@@ -331,7 +259,7 @@ macro_rules! binary_operator {
             type Output = FractionExact;
 
             fn add(self, rhs: &$t) -> Self::Output {
-                Self(self.0 + rhs)
+                Self(self.0 + Rational::from(*rhs))
             }
         }
 
@@ -339,7 +267,7 @@ macro_rules! binary_operator {
             type Output = FractionExact;
 
             fn sub(self, rhs: $t) -> Self::Output {
-                Self(self.0 - rhs)
+                Self(self.0 - Rational::from(rhs))
             }
         }
 
@@ -347,7 +275,7 @@ macro_rules! binary_operator {
             type Output = FractionExact;
 
             fn sub(self, rhs: &$t) -> Self::Output {
-                Self(self.0 - rhs)
+                Self(self.0 - Rational::from(*rhs))
             }
         }
 
@@ -355,7 +283,7 @@ macro_rules! binary_operator {
             type Output = FractionExact;
 
             fn div(self, rhs: $t) -> Self::Output {
-                Self(self.0 / rhs)
+                Self(self.0 / Rational::from(rhs))
             }
         }
 
@@ -363,7 +291,7 @@ macro_rules! binary_operator {
             type Output = FractionExact;
 
             fn div(self, rhs: &$t) -> Self::Output {
-                Self(self.0 / rhs)
+                Self(self.0 / Rational::from(*rhs))
             }
         }
 
@@ -371,7 +299,7 @@ macro_rules! binary_operator {
             type Output = FractionExact;
 
             fn mul(self, rhs: $t) -> Self::Output {
-                Self(self.0 * rhs)
+                Self(self.0 * Rational::from(rhs))
             }
         }
 
@@ -379,13 +307,12 @@ macro_rules! binary_operator {
             type Output = FractionExact;
 
             fn mul(self, rhs: &$t) -> Self::Output {
-                Self(self.0 * rhs)
+                Self(self.0 * Rational::from(*rhs))
             }
         }
     };
 }
 
-binary_operator!(Integer);
 binary_operator!(usize);
 binary_operator!(u8);
 binary_operator!(u16);
@@ -397,6 +324,8 @@ binary_operator!(i16);
 binary_operator!(i32);
 binary_operator!(i64);
 binary_operator!(i128);
+
+//======================== assign operators ========================//
 
 impl<T> AddAssign<T> for FractionExact
 where
@@ -431,26 +360,6 @@ where
     }
 }
 
-impl Mul<&FractionExact> for &FractionExact {
-    type Output = FractionExact;
-
-    fn mul(self, rhs: &FractionExact) -> Self::Output {
-        match (self, rhs) {
-            (FractionExact(x), FractionExact(y)) => FractionExact(x.mul(y)),
-        }
-    }
-}
-
-impl Mul<FractionExact> for FractionExact {
-    type Output = FractionExact;
-
-    fn mul(self, rhs: FractionExact) -> Self::Output {
-        match (self, rhs) {
-            (FractionExact(x), FractionExact(y)) => FractionExact(x.mul(y)),
-        }
-    }
-}
-
 impl<T> MulAssign<T> for FractionExact
 where
     T: Borrow<FractionExact>,
@@ -459,26 +368,6 @@ where
         let rhs = rhs.borrow();
         match (self, rhs) {
             (FractionExact(x), FractionExact(y)) => x.mul_assign(y),
-        }
-    }
-}
-
-impl Div<&FractionExact> for &FractionExact {
-    type Output = FractionExact;
-
-    fn div(self, rhs: &FractionExact) -> Self::Output {
-        match (self, rhs) {
-            (FractionExact(x), FractionExact(y)) => FractionExact(x.div(y)),
-        }
-    }
-}
-
-impl Div<FractionExact> for FractionExact {
-    type Output = FractionExact;
-
-    fn div(self, rhs: FractionExact) -> Self::Output {
-        match (self, rhs) {
-            (FractionExact(x), FractionExact(y)) => FractionExact(x.div(y)),
         }
     }
 }
@@ -554,13 +443,13 @@ impl Hash for FractionExact {
 
 impl Sum for FractionExact {
     fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
-        iter.fold(<FractionExact as Zero>::zero(), |sum, f| &sum + &f)
+        iter.fold(<FractionExact as Zero>::zero(), |sum, f| sum + f)
     }
 }
 
 impl<'a> Sum<&'a FractionExact> for FractionExact {
     fn sum<I: Iterator<Item = &'a FractionExact>>(iter: I) -> Self {
-        iter.fold(<FractionExact as Zero>::zero(), |sum, f| &sum + f)
+        iter.fold(<FractionExact as Zero>::zero(), |sum, f| f + &sum)
     }
 }
 
@@ -719,8 +608,8 @@ mod tests {
     use std::ops::Neg;
 
     use crate::{
-        ebi_number::{One, Signed, Zero},
-        fraction_exact::FractionExact,
+        ebi_number::{One, Signed},
+        fraction::fraction_exact::FractionExact,
     };
 
     #[test]
@@ -729,12 +618,5 @@ mod tests {
         assert!(one.is_positive());
         let one = one.neg();
         assert!(one.is_negative());
-    }
-
-    #[test]
-    fn fraction_exact() {
-        let zero = FractionExact::one().one_minus();
-
-        assert!(zero.is_zero());
     }
 }

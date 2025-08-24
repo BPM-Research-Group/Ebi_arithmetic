@@ -3,7 +3,7 @@ use num::BigUint;
 use std::sync::atomic::AtomicBool;
 
 use crate::{
-    ebi_number::{One, Zero},
+    fraction::ebi_number::{One, Zero},
     fraction_raw::{getters::FractionRawGetter, one::SetOne, zero::IsZero},
     matrix::{
         ebi_matrix::EbiMatrix, fraction_matrix_enum::FractionMatrixEnum,

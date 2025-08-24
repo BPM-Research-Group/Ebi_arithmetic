@@ -353,8 +353,7 @@ mod tests {
         ebi_number::{One, Zero},
         exact::MaybeExact,
         f, f0, f1,
-        fraction::Fraction,
-        fraction_f64::FractionF64,
+        fraction::{fraction::Fraction, fraction_f64::FractionF64},
         matrix::{
             ebi_matrix::EbiMatrix, fraction_matrix::FractionMatrix,
             fraction_matrix_exact::FractionMatrixExact, fraction_matrix_f64::FractionMatrixF64,

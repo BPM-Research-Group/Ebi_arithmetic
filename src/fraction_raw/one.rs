@@ -1,7 +1,7 @@
 use num::BigUint;
 
 use crate::{
-    ebi_number::One,
+    fraction::ebi_number::One,
     fraction_raw::fraction_raw::{FractionRaw, FractionRawMut},
     matrix::loose_fraction::Type,
 };

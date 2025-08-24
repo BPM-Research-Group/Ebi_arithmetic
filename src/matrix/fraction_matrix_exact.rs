@@ -10,7 +10,7 @@ use num::{BigUint, Zero, integer::gcd};
 use num_bigint::ToBigUint;
 
 use crate::{
-    ebi_number::One,
+    fraction::ebi_number::One,
     exact::MaybeExact,
     fraction_exact::FractionExact,
     fraction_raw::{fraction_raw::FractionRaw, getters::FractionRawGetter},

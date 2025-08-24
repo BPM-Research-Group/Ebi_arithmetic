@@ -49,10 +49,7 @@ macro_rules! pop_front_columns {
 #[cfg(test)]
 mod tests {
     use crate::{
-        ebi_number::Zero,
-        f, f0,
-        fraction::Fraction,
-        matrix::{ebi_matrix::EbiMatrix, fraction_matrix::FractionMatrix, inversion::Inversion},
+        f, f0, fraction::{ebi_number::Zero, fraction::Fraction}, matrix::{ebi_matrix::EbiMatrix, fraction_matrix::FractionMatrix, inversion::Inversion}
     };
 
     #[test]

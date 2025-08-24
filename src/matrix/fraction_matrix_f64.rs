@@ -1,6 +1,9 @@
 use crate::{
-    ebi_number::Zero, exact::MaybeExact, fraction::EPSILON, fraction_f64::FractionF64,
-    matrix::ebi_matrix::EbiMatrix, pop_front_columns, push_columns,
+    ebi_number::Zero,
+    exact::MaybeExact,
+    fraction::{fraction::EPSILON, fraction_f64::FractionF64},
+    matrix::ebi_matrix::EbiMatrix,
+    pop_front_columns, push_columns,
 };
 use anyhow::{Error, Result, anyhow};
 use itertools::Itertools;
@@ -206,9 +209,7 @@ impl std::fmt::Display for FractionMatrixF64 {
 #[cfg(test)]
 mod tests {
     use crate::{
-        f_a,
-        fraction_f64::FractionF64,
-        matrix::{ebi_matrix::EbiMatrix, fraction_matrix_f64::FractionMatrixF64},
+        f_a, fraction::fraction_f64::FractionF64, matrix::{ebi_matrix::EbiMatrix, fraction_matrix_f64::FractionMatrixF64}
     };
 
     #[test]

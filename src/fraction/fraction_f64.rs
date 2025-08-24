@@ -12,68 +12,10 @@ use std::{
 
 use anyhow::{Error, Result, anyhow};
 
-use crate::{
-    ebi_number::{EbiNumber, Infinite, Normal, Round},
-    exact::MaybeExact,
-    fraction::EPSILON,
-};
-
-use super::ebi_number::{One, Signed, Zero};
+use crate::{ebi_number::Zero, exact::MaybeExact, fraction::fraction::EPSILON};
 
 #[derive(Debug, Clone, Copy)]
-pub struct FractionF64(pub f64);
-
-impl FractionF64 {
-    pub fn two() -> Self {
-        Self(2.0)
-    }
-
-    pub fn one_minus(self) -> Self {
-        Self(1.0 - self.0)
-    }
-
-    pub fn is_sign_negative(&self) -> bool {
-        self.0.is_sign_negative()
-    }
-
-    pub fn is_sign_positive(&self) -> bool {
-        self.0.is_sign_positive()
-    }
-
-    /// Returns true if the value is Infinity (does not matter positive or negative)
-    pub fn is_infinite(&self) -> bool {
-        self.0.is_infinite()
-    }
-
-    pub fn is_nan(&self) -> bool {
-        self.0.is_nan()
-    }
-
-    pub fn infinity() -> Self {
-        Self(f64::INFINITY)
-    }
-
-    pub fn neg_infinity() -> Self {
-        Self(f64::NEG_INFINITY)
-    }
-
-    pub fn nan() -> Self {
-        Self(f64::NAN)
-    }
-
-    pub fn sqrt_abs(&self, _decimal_places: u32) -> FractionF64 {
-        Self(self.0.abs().sqrt())
-    }
-
-    /**
-     * 1/self
-     */
-    pub fn recip(&self) -> Self {
-        Self(self.0.recip())
-    }
-}
-
-impl EbiNumber for FractionF64 {}
+pub struct FractionF64(pub(crate) f64);
 
 impl MaybeExact for FractionF64 {
     type Approximate = f64;
@@ -92,70 +34,6 @@ impl MaybeExact for FractionF64 {
     }
 }
 
-impl One for FractionF64 {
-    fn one() -> Self {
-        Self(1.0)
-    }
-
-    fn is_one(&self) -> bool {
-        (self.0 - 1.0).abs() - &EPSILON < 0.0
-    }
-}
-
-impl Zero for FractionF64 {
-    fn zero() -> Self {
-        Self(0.0)
-    }
-
-    fn is_zero(&self) -> bool {
-        self.0.abs() - &EPSILON < 0.0
-    }
-}
-
-impl Signed for FractionF64 {
-    fn abs(&self) -> Self {
-        Self(self.0.abs())
-    }
-
-    fn is_positive(&self) -> bool {
-        self.0 != 0f64 && self.0 > EPSILON
-    }
-
-    fn is_negative(&self) -> bool {
-        self.0 != 0f64 && self.0 < -EPSILON
-    }
-
-    fn is_not_negative(&self) -> bool {
-        self.0.is_not_negative()
-    }
-
-    fn is_not_positive(&self) -> bool {
-        self.0.is_not_positive()
-    }
-}
-
-impl Infinite for FractionF64 {
-    fn is_infinite(&self) -> bool {
-        self.0.is_infinite()
-    }
-}
-
-impl Normal for FractionF64 {
-    fn is_nan(&self) -> bool {
-        self.0.is_nan()
-    }
-}
-
-impl Round for FractionF64 {
-    fn floor(self) -> Self {
-        FractionF64(self.0.floor())
-    }
-
-    fn ceil(self) -> Self {
-        FractionF64(self.0.ceil())
-    }
-}
-
 impl Default for FractionF64 {
     fn default() -> Self {
         Self(Default::default())
@@ -164,15 +42,6 @@ impl Default for FractionF64 {
 
 impl PartialEq for FractionF64 {
     fn eq(&self, other: &Self) -> bool {
-        if self.is_nan() && other.is_nan() {
-            return true;
-        }
-        if self.is_positive_infinite() && other.is_positive_infinite() {
-            return true;
-        }
-        if self.is_negative_infinite() && other.is_negative_infinite() {
-            return true;
-        }
         match (self, other) {
             (FractionF64(l0), FractionF64(r0)) => l0 - EPSILON <= *r0 && *r0 <= l0 + EPSILON,
         }
@@ -702,8 +571,8 @@ mod tests {
     use std::ops::Neg;
 
     use crate::{
-        ebi_number::{One, Signed, Zero},
-        fraction_f64::FractionF64,
+        ebi_number::{One, Signed},
+        fraction::fraction_f64::FractionF64,
     };
 
     #[test]
@@ -712,12 +581,5 @@ mod tests {
         assert!(one.is_positive());
         let one = one.neg();
         assert!(one.is_negative());
-    }
-
-    #[test]
-    fn fraction_exact() {
-        let zero = FractionF64::one().one_minus();
-
-        assert!(zero.is_zero());
     }
 }
