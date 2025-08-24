@@ -12,7 +12,11 @@ use std::{
 
 use anyhow::{Error, Result, anyhow};
 
-use crate::{ebi_number::Zero, exact::MaybeExact, fraction::fraction::EPSILON};
+use crate::{
+    ebi_number::Zero,
+    exact::MaybeExact,
+    fraction::fraction::EPSILON,
+};
 
 #[derive(Debug, Clone, Copy)]
 pub struct FractionF64(pub(crate) f64);

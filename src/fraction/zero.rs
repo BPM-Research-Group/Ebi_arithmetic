@@ -1,7 +1,4 @@
-use malachite::{
-    base::num::basic::traits::{One as MOne, Zero as MZero},
-    rational::Rational,
-};
+use malachite::{base::num::basic::traits::Zero as MZero, rational::Rational};
 
 use crate::{
     ebi_number::{Signed, Zero},
@@ -35,7 +32,7 @@ impl Zero for FractionExact {
 impl Zero for FractionEnum {
     fn zero() -> Self {
         if is_exact_globally() {
-            FractionEnum::Exact(Rational::ONE)
+            FractionEnum::Exact(Rational::ZERO)
         } else {
             FractionEnum::Approx(0.0)
         }

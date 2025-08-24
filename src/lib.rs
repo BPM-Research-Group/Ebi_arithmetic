@@ -3,19 +3,19 @@ pub mod ebi_number;
 pub mod exact;
 pub mod parsing;
 
-// pub mod matrix {
-//     pub mod ebi_matrix;
-//     pub mod fraction_matrix;
-//     pub mod fraction_matrix_enum;
-//     pub mod fraction_matrix_exact;
-//     pub mod fraction_matrix_f64;
-//     pub mod inversion;
+pub mod matrix {
+    pub mod ebi_matrix;
+    pub mod fraction_matrix;
+    pub mod fraction_matrix_enum;
+    pub mod fraction_matrix_exact;
+    pub mod fraction_matrix_f64;
+    pub mod inversion;
 
-//     pub mod gauss_jordan;
-//     pub mod identity_minus;
-//     pub mod loose_fraction;
-//     pub mod mul;
-// }
+    pub mod gauss_jordan;
+    pub mod identity_minus;
+    // pub mod loose_fraction;
+    pub mod mul;
+}
 
 // pub mod fraction_raw {
 //     pub mod div_assign;
@@ -38,4 +38,5 @@ pub mod fraction {
     pub mod round;
     pub mod signed;
     pub mod zero;
+    pub mod recip;
 }

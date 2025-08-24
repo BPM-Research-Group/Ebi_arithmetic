@@ -73,5 +73,5 @@ pub trait Round: Sized {
 
 pub trait Recip: Sized {
     /// Takes the reciprocal (inverse) of a number, `1/x`.
-    fn recip(&self) -> Self;
+    fn recip(self) -> Self;
 }
