@@ -6,6 +6,7 @@ use crate::{
     },
 };
 use malachite::{
+    Integer, Natural,
     base::num::{arithmetic::traits::Abs, basic::traits::Zero as MZero},
     rational::Rational,
 };
@@ -107,6 +108,34 @@ impl Signed for Rational {
 
     fn is_negative(&self) -> bool {
         self < &Rational::ZERO
+    }
+}
+
+impl Signed for Integer {
+    fn abs(self) -> Self {
+        Abs::abs(self)
+    }
+
+    fn is_positive(&self) -> bool {
+        self > &Integer::ZERO
+    }
+
+    fn is_negative(&self) -> bool {
+        self < &Integer::ZERO
+    }
+}
+
+impl Signed for Natural {
+    fn abs(self) -> Self {
+        self
+    }
+
+    fn is_positive(&self) -> bool {
+        self > &Natural::ZERO
+    }
+
+    fn is_negative(&self) -> bool {
+        false
     }
 }
 
