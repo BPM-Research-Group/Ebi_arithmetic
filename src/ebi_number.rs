@@ -40,6 +40,8 @@ pub trait One: Sized {
     }
 
     fn is_one(&self) -> bool;
+
+    fn one_minus(self) -> Self;
 }
 
 pub trait Signed: Sized {

@@ -35,3 +35,4 @@ pub use crate::ebi_number::*;
 pub use crate::exact::*;
 pub use crate::fraction::fraction::Fraction;
 pub use crate::matrix::fraction_matrix::FractionMatrix;
+pub use crate::fraction::choose_randomly::FractionRandomCache;

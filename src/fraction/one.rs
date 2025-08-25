@@ -17,6 +17,10 @@ impl One for FractionF64 {
     fn is_one(&self) -> bool {
         self.0.is_one()
     }
+
+    fn one_minus(self) -> Self {
+        Self(1.0 - self.0)
+    }
 }
 
 impl One for FractionExact {
@@ -26,6 +30,10 @@ impl One for FractionExact {
 
     fn is_one(&self) -> bool {
         self.0.is_one()
+    }
+
+    fn one_minus(self) -> Self {
+        Self(Rational::ONE - self.0)
     }
 }
 
@@ -53,6 +61,14 @@ impl One for FractionEnum {
             FractionEnum::CannotCombineExactAndApprox => {}
         }
     }
+
+    fn one_minus(self) -> Self {
+        match self {
+            FractionEnum::Exact(f) => FractionEnum::Exact(f.one_minus()),
+            FractionEnum::Approx(f) => FractionEnum::Approx(1.0 - f),
+            FractionEnum::CannotCombineExactAndApprox => FractionEnum::CannotCombineExactAndApprox,
+        }
+    }
 }
 
 impl One for Rational {
@@ -62,6 +78,10 @@ impl One for Rational {
 
     fn is_one(&self) -> bool {
         self == &Rational::ONE
+    }
+
+    fn one_minus(self) -> Self {
+        Rational::ONE - self
     }
 }
 
@@ -74,6 +94,10 @@ macro_rules! float {
 
             fn is_one(&self) -> bool {
                 (self - 1.0).abs() - &$e < 0.0
+            }
+
+            fn one_minus(self) -> Self {
+                1.0 - self
             }
         }
     };
@@ -91,6 +115,10 @@ macro_rules! ttype {
 
             fn is_one(&self) -> bool {
                 self == &1
+            }
+
+            fn one_minus(self) -> Self {
+                1 - self
             }
         }
     };
