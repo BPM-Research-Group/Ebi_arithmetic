@@ -6,15 +6,14 @@ use std::{
 use anyhow::{Error, Result, anyhow};
 
 use crate::{
+    ebi_matrix::EbiMatrix,
     ebi_number::Zero,
-    exact::{self, MaybeExact, is_exact_globally},
+    exact::MaybeExact,
+    exact::{self, is_exact_globally},
     fraction::{
         fraction_enum::FractionEnum, fraction_exact::FractionExact, fraction_f64::FractionF64,
     },
-    matrix::{
-        ebi_matrix::EbiMatrix, fraction_matrix_exact::FractionMatrixExact,
-        fraction_matrix_f64::FractionMatrixF64,
-    },
+    matrix::{fraction_matrix_exact::FractionMatrixExact, fraction_matrix_f64::FractionMatrixF64},
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]

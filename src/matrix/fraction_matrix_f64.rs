@@ -1,8 +1,7 @@
 use crate::{
     ebi_number::Zero,
-    exact::MaybeExact,
     fraction::{fraction::EPSILON, fraction_f64::FractionF64},
-    matrix::ebi_matrix::EbiMatrix,
+    ebi_matrix::EbiMatrix,
     pop_front_columns, push_columns,
 };
 use anyhow::{Error, Result, anyhow};
@@ -161,22 +160,7 @@ impl TryFrom<Vec<Vec<FractionF64>>> for FractionMatrixF64 {
     }
 }
 
-impl MaybeExact for FractionMatrixF64 {
-    type Approximate = FractionMatrixF64;
-    type Exact = ();
 
-    fn is_exact(&self) -> bool {
-        false
-    }
-
-    fn extract_approx(&self) -> anyhow::Result<&Self::Approximate> {
-        Ok(self)
-    }
-
-    fn extract_exact(&self) -> anyhow::Result<&Self::Exact> {
-        Err(anyhow!("cannot extract a fraction from a float"))
-    }
-}
 
 impl std::fmt::Display for FractionMatrixF64 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

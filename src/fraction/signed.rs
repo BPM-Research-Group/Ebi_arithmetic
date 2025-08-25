@@ -1,15 +1,14 @@
 use crate::{
-    ebi_number::Signed,
+    ebi_number::{Signed, Zero},
     fraction::{
         fraction::EPSILON, fraction_enum::FractionEnum, fraction_exact::FractionExact,
         fraction_f64::FractionF64,
     },
 };
 use malachite::{
-    base::num::{arithmetic::traits::Abs, basic::traits::Zero},
+    base::num::{arithmetic::traits::Abs, basic::traits::Zero as MZero},
     rational::Rational,
 };
-use num::{Float, Signed as NumSigned};
 
 impl Signed for FractionF64 {
     fn abs(self) -> Self {
@@ -115,7 +114,7 @@ macro_rules! float {
     ($t: ident, $e: expr) => {
         impl Signed for $t {
             fn abs(self) -> Self {
-                <$t as Float>::abs(self)
+                $t::abs(self)
             }
 
             fn is_positive(&self) -> bool {
@@ -162,15 +161,15 @@ macro_rules! ttype_signed {
     ($t:ident) => {
         impl Signed for $t {
             fn abs(self) -> Self {
-                NumSigned::abs(&self)
+                $t::abs(self)
             }
 
             fn is_positive(&self) -> bool {
-                NumSigned::is_positive(self)
+                self > &$t::zero()
             }
 
             fn is_negative(&self) -> bool {
-                NumSigned::is_negative(self)
+                self < &$t::zero()
             }
         }
     };

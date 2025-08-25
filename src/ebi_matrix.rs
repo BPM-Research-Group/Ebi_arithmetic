@@ -1,6 +1,5 @@
 use crate::{
-    exact::MaybeExact,
-    matrix::{gauss_jordan::GaussJordan, identity_minus::IdentityMinus},
+    exact::MaybeExact
 };
 use anyhow::Result;
 
@@ -44,4 +43,26 @@ where
 
     /// Returns a vector of the matrix
     fn to_vec(self) -> Vec<Vec<T>>;
+}
+
+pub trait IdentityMinus {
+    /// For a given matrix M, computes I-M.
+    /// The matrix does not need to be squared.
+    fn identity_minus(&mut self) -> Result<()>;
+}
+
+pub trait Inversion {
+    fn invert(self) -> Result<Self>
+    where
+        Self: Sized;
+}
+
+pub trait GaussJordan {
+    /// Applies Gaussian elimination to obtain a matrix in row echelon form.
+    fn gauss_jordan(&mut self);
+
+    /// Applies Gaussian elimination to obtain a matrix in reduced row echelon form.
+    fn gauss_jordan_reduced(self) -> Result<Self>
+    where
+        Self: Sized;
 }

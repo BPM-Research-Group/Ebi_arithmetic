@@ -31,7 +31,7 @@ impl Recip for FractionEnum {
 
 impl Recip for f64 {
     fn recip(self) -> Self {
-        num::Float::recip(self)
+        1.0 / self
     }
 }
 

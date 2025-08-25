@@ -3,9 +3,12 @@ use itertools::iproduct;
 use malachite::{base::num::basic::traits::Zero, rational::Rational};
 use std::ops::Mul;
 
-use crate::matrix::{
-    ebi_matrix::EbiMatrix, fraction_matrix_enum::FractionMatrixEnum,
-    fraction_matrix_exact::FractionMatrixExact, fraction_matrix_f64::FractionMatrixF64,
+use crate::{
+    EbiMatrix,
+    matrix::{
+        fraction_matrix_enum::FractionMatrixEnum, fraction_matrix_exact::FractionMatrixExact,
+        fraction_matrix_f64::FractionMatrixF64,
+    },
 };
 
 impl Mul for &FractionMatrixExact {
@@ -97,18 +100,17 @@ impl Mul for &FractionMatrixEnum {
 #[cfg(test)]
 mod tests {
 
-    use crate::fraction::fraction::Fraction;
+    use crate::{EbiMatrix, MaybeExact, fraction::fraction::Fraction};
     use std::time::Instant;
 
     use rand::Rng;
 
     use crate::{
-        exact::MaybeExact,
         f,
         fraction::{fraction_exact::FractionExact, fraction_f64::FractionF64},
         matrix::{
-            ebi_matrix::EbiMatrix, fraction_matrix::FractionMatrix,
-            fraction_matrix_exact::FractionMatrixExact, fraction_matrix_f64::FractionMatrixF64,
+            fraction_matrix::FractionMatrix, fraction_matrix_exact::FractionMatrixExact,
+            fraction_matrix_f64::FractionMatrixF64,
         },
     };
 
@@ -260,10 +262,10 @@ mod tests {
         let repeat = 5;
         let size = 100_usize;
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let sqrt = 1000_u64;
-        let numerators = vec![rng.gen_range(0..sqrt); size * size];
-        let denominators = vec![rng.gen_range(0..sqrt); size * size];
+        let numerators = vec![rng.random_range(0..sqrt); size * size];
+        let denominators = vec![rng.random_range(0..sqrt); size * size];
 
         let matrices_f64: Vec<FractionMatrixF64> = (0..repeat)
             .into_iter()

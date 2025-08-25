@@ -10,33 +10,16 @@ use std::{
     sync::Arc,
 };
 
-use anyhow::{Error, Result, anyhow};
-
-use crate::{
-    ebi_number::Zero,
-    exact::MaybeExact,
-    fraction::fraction::EPSILON,
+use anyhow::{Error, anyhow};
+use malachite::{
+    base::{num::conversion::traits::RoundingFrom, rounding_modes::RoundingMode::Nearest},
+    rational::Rational,
 };
+
+use crate::{ebi_number::Zero, fraction::fraction::EPSILON};
 
 #[derive(Debug, Clone, Copy)]
 pub struct FractionF64(pub(crate) f64);
-
-impl MaybeExact for FractionF64 {
-    type Approximate = f64;
-    type Exact = fraction::BigFraction;
-
-    fn is_exact(&self) -> bool {
-        false
-    }
-
-    fn extract_approx(&self) -> Result<&f64> {
-        Ok(&self.0)
-    }
-
-    fn extract_exact(&self) -> Result<&fraction::BigFraction> {
-        Err(anyhow!("cannot extract a fraction from a float"))
-    }
-}
 
 impl Default for FractionF64 {
     fn default() -> Self {
@@ -86,12 +69,13 @@ impl FromStr for FractionF64 {
     type Err = Error;
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        match f64::from_str(s) {
-            Ok(f) => Ok(Self(f)),
-            Err(_) => match fraction::Fraction::from_str(s) {
-                Ok(f) => Ok(Self(format!("{:.20}", f).parse::<f64>()?)),
-                Err(e) => Err(e.into()),
-            },
+        if let Ok(float) = f64::from_str(s) {
+            Ok(Self(float))
+        } else {
+            match Rational::from_str(s) {
+                Ok(f) => Ok(Self(f64::rounding_from(f, Nearest).0)),
+                Err(_) => Err(anyhow!("{} is not an approximate fraction", s)),
+            }
         }
     }
 }

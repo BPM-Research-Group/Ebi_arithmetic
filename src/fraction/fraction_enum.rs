@@ -1,4 +1,4 @@
-use anyhow::{Error, Result, anyhow};
+use anyhow::{Error, anyhow};
 use malachite::{
     base::{num::conversion::traits::RoundingFrom, rounding_modes::RoundingMode::Nearest},
     rational::Rational,
@@ -16,7 +16,7 @@ use std::{
 
 use crate::{
     ebi_number::Zero,
-    exact::{MaybeExact, is_exact_globally},
+    exact::is_exact_globally,
     fraction::fraction::EPSILON,
 };
 
@@ -36,39 +36,6 @@ impl FractionEnum {
             (FractionEnum::Exact(_), FractionEnum::Exact(_)) => true,
             (FractionEnum::Approx(_), FractionEnum::Approx(_)) => true,
             _ => false,
-        }
-    }
-}
-
-impl MaybeExact for FractionEnum {
-    type Approximate = f64;
-    type Exact = Rational;
-
-    fn is_exact(&self) -> bool {
-        match self {
-            FractionEnum::Exact(_) => true,
-            FractionEnum::Approx(_) => false,
-            FractionEnum::CannotCombineExactAndApprox => false,
-        }
-    }
-
-    fn extract_approx(&self) -> Result<&f64> {
-        match self {
-            FractionEnum::Exact(_) => Err(anyhow!("cannot extract a float from a fraction")),
-            FractionEnum::Approx(f) => Ok(f),
-            FractionEnum::CannotCombineExactAndApprox => {
-                Err(anyhow!("cannot combine exact and approximate arithmetic"))
-            }
-        }
-    }
-
-    fn extract_exact(&self) -> Result<&Rational> {
-        match self {
-            FractionEnum::Exact(f) => Ok(f),
-            FractionEnum::Approx(_) => Err(anyhow!("cannot extract a fraction from a float")),
-            FractionEnum::CannotCombineExactAndApprox => {
-                Err(anyhow!("cannot combine exact and approximate arithmetic"))
-            }
         }
     }
 }

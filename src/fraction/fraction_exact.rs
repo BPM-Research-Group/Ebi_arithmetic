@@ -1,4 +1,4 @@
-use anyhow::{Error, Result, anyhow};
+use anyhow::{Error, anyhow};
 use malachite::rational::Rational;
 use std::{
     borrow::Borrow,
@@ -10,31 +10,10 @@ use std::{
     sync::Arc,
 };
 
-use crate::{ebi_number::Zero, exact::MaybeExact};
+use crate::ebi_number::Zero;
 
 #[derive(Clone)]
 pub struct FractionExact(pub(crate) Rational);
-
-impl MaybeExact for FractionExact {
-    type Approximate = f64;
-    type Exact = Rational;
-
-    fn is_exact(&self) -> bool {
-        true
-    }
-
-    fn extract_approx(&self) -> Result<&f64> {
-        Err(anyhow!("cannot extract a float from a fraction"))
-    }
-
-    /**
-     * This is a low-level function to extract an f64. Only use if you are sure that the fraction is exact.
-     * May not be available in all compilation modes.
-     */
-    fn extract_exact(&self) -> Result<&Rational> {
-        Ok(&self.0)
-    }
-}
 
 impl Default for FractionExact {
     fn default() -> Self {

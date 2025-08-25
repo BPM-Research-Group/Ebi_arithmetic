@@ -6,8 +6,7 @@ use malachite::{
 };
 
 use crate::{
-    exact::MaybeExact, fraction::fraction_exact::FractionExact, matrix::ebi_matrix::EbiMatrix,
-    pop_front_columns, push_columns,
+    ebi_matrix::EbiMatrix, fraction::fraction_exact::FractionExact, pop_front_columns, push_columns
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -119,24 +118,6 @@ impl TryFrom<Vec<Vec<FractionExact>>> for FractionMatrixExact {
                 values: vec![],
             })
         }
-    }
-}
-
-impl MaybeExact for FractionMatrixExact {
-    type Approximate = ();
-
-    type Exact = FractionMatrixExact;
-
-    fn is_exact(&self) -> bool {
-        true
-    }
-
-    fn extract_approx(&self) -> anyhow::Result<&Self::Approximate> {
-        Err(anyhow!("cannot extract a float from a fraction"))
-    }
-
-    fn extract_exact(&self) -> anyhow::Result<&Self::Exact> {
-        Ok(self)
     }
 }
 

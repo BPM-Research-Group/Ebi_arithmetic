@@ -1,6 +1,7 @@
 use crate::fraction::{
     fraction_enum::FractionEnum, fraction_exact::FractionExact, fraction_f64::FractionF64,
 };
+use anyhow::Result;
 
 pub trait EbiNumber: Zero + One + Round + Clone {}
 
@@ -74,4 +75,29 @@ pub trait Round: Sized {
 pub trait Recip: Sized {
     /// Takes the reciprocal (inverse) of a number, `1/x`.
     fn recip(self) -> Self;
+}
+
+pub trait ChooseRandomly {
+    type Cache;
+
+    /// Return a random index from 0 (inclusive) to the length of the list (exclusive).
+    /// The likelihood of each index to be returned is proportional to the value of the fraction at that index.
+    ///
+    /// The fractions do not need to sum to 1, and do not need to be sorted, but need to be positive.
+    ///
+    /// If more than a couple of draws are made, consider creating a cache and drawing from it.
+    fn choose_randomly(fractions: &Vec<Self>) -> Result<usize>
+    where
+        Self: Sized;
+
+    fn choose_randomly_create_cache<'a>(
+        fractions: impl Iterator<Item = &'a Self>,
+    ) -> Result<Self::Cache>
+    where
+        Self: Sized,
+        Self: 'a;
+
+    fn choose_randomly_cached(cache: &Self::Cache) -> usize
+    where
+        Self: Sized;
 }

@@ -3,22 +3,13 @@ use malachite::rational::Rational;
 use std::sync::atomic::AtomicBool;
 
 use crate::{
+    ebi_matrix::EbiMatrix,
     ebi_number::{One, Zero},
     matrix::{
-        ebi_matrix::EbiMatrix, fraction_matrix_enum::FractionMatrixEnum,
-        fraction_matrix_exact::FractionMatrixExact, fraction_matrix_f64::FractionMatrixF64,
-    },
+        fraction_matrix_enum::FractionMatrixEnum, fraction_matrix_exact::FractionMatrixExact,
+        fraction_matrix_f64::FractionMatrixF64,
+    }, GaussJordan,
 };
-
-pub trait GaussJordan {
-    /// Applies Gaussian elimination to obtain a matrix in row echelon form.
-    fn gauss_jordan(&mut self);
-
-    /// Applies Gaussian elimination to obtain a matrix in reduced row echelon form.
-    fn gauss_jordan_reduced(self) -> Result<Self>
-    where
-        Self: Sized;
-}
 
 macro_rules! gauss_jordan {
     ($self:ident) => {

@@ -1,16 +1,13 @@
 use anyhow::{Result, anyhow};
 use malachite::{base::num::basic::traits::One, rational::Rational};
 
-use crate::matrix::{
-    ebi_matrix::EbiMatrix, fraction_matrix_enum::FractionMatrixEnum,
-    fraction_matrix_exact::FractionMatrixExact, fraction_matrix_f64::FractionMatrixF64,
+use crate::{
+    ebi_matrix::EbiMatrix,
+    matrix::{
+        fraction_matrix_enum::FractionMatrixEnum, fraction_matrix_exact::FractionMatrixExact,
+        fraction_matrix_f64::FractionMatrixF64,
+    }, IdentityMinus,
 };
-
-pub trait IdentityMinus {
-    /// For a given matrix M, computes I-M.
-    /// The matrix does not need to be squared.
-    fn identity_minus(&mut self) -> Result<()>;
-}
 
 impl IdentityMinus for FractionMatrixF64 {
     fn identity_minus(&mut self) -> Result<()> {

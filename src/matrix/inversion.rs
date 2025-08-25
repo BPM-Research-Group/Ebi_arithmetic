@@ -1,21 +1,14 @@
 use std::mem;
 
 use crate::{
-    ebi_number::{One, Recip, Zero},
+    EbiMatrix, GaussJordan, Inversion, One, Recip, Zero,
     matrix::{
-        ebi_matrix::EbiMatrix, fraction_matrix_enum::FractionMatrixEnum,
-        fraction_matrix_exact::FractionMatrixExact, fraction_matrix_f64::FractionMatrixF64,
-        gauss_jordan::GaussJordan,
+        fraction_matrix_enum::FractionMatrixEnum, fraction_matrix_exact::FractionMatrixExact,
+        fraction_matrix_f64::FractionMatrixF64,
     },
 };
 use anyhow::{Result, anyhow};
 use malachite::rational::Rational;
-
-pub trait Inversion {
-    fn invert(self) -> Result<Self>
-    where
-        Self: Sized;
-}
 
 macro_rules! invert {
     ($self:expr, $t:ident) => {{
