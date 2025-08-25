@@ -1,5 +1,5 @@
 use anyhow::{Result, anyhow};
-use malachite::rational::Rational;
+use malachite::{Integer, Natural, rational::Rational};
 
 use crate::{
     exact::MaybeExact,
@@ -76,6 +76,64 @@ impl MaybeExact for FractionEnum {
                 Err(anyhow!("cannot combine exact and approximate arithmetic"))
             }
         }
+    }
+}
+
+impl MaybeExact for Rational {
+    type Approximate = f64;
+
+    type Exact = Rational;
+
+    fn is_exact(&self) -> bool {
+        true
+    }
+
+    fn extract_approx(&self) -> Result<&Self::Approximate> {
+        Err(anyhow!("cannot extract a float from a fraction"))
+    }
+
+    fn extract_exact(&self) -> Result<&Self::Exact> {
+        Ok(self)
+    }
+}
+
+impl MaybeExact for Integer {
+    type Approximate = f64;
+
+    type Exact = Integer;
+
+    fn is_exact(&self) -> bool {
+        true
+    }
+
+    fn extract_approx(&self) -> Result<&Self::Approximate> {
+        Err(anyhow!(
+            "cannot extract an approximate integer from an integer"
+        ))
+    }
+
+    fn extract_exact(&self) -> Result<&Self::Exact> {
+        Ok(self)
+    }
+}
+
+impl MaybeExact for Natural {
+    type Approximate = f64;
+
+    type Exact = Natural;
+
+    fn is_exact(&self) -> bool {
+        true
+    }
+
+    fn extract_approx(&self) -> Result<&Self::Approximate> {
+        Err(anyhow!(
+            "cannot extract an approximate integer from an integer"
+        ))
+    }
+
+    fn extract_exact(&self) -> Result<&Self::Exact> {
+        Ok(self)
     }
 }
 
