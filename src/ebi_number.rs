@@ -40,8 +40,6 @@ pub trait One: Sized {
     }
 
     fn is_one(&self) -> bool;
-
-    fn one_minus(self) -> Self;
 }
 
 pub trait Signed: Sized {
@@ -77,6 +75,10 @@ pub trait Round: Sized {
 pub trait Recip: Sized {
     /// Takes the reciprocal (inverse) of a number, `1/x`.
     fn recip(self) -> Self;
+}
+
+pub trait OneMinus: Sized {
+    fn one_minus(self) -> Self;
 }
 
 pub trait ChooseRandomly {

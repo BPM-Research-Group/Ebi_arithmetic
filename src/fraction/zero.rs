@@ -1,4 +1,4 @@
-use malachite::{base::num::basic::traits::Zero as MZero, rational::Rational, Natural};
+use malachite::{Integer, Natural, base::num::basic::traits::Zero as MZero, rational::Rational};
 
 use crate::{
     ebi_number::{Signed, Zero},
@@ -72,6 +72,16 @@ impl Zero for Natural {
 
     fn is_zero(&self) -> bool {
         self == &Natural::ZERO
+    }
+}
+
+impl Zero for Integer {
+    fn zero() -> Self {
+        Integer::ZERO.clone()
+    }
+
+    fn is_zero(&self) -> bool {
+        self == &Integer::ZERO
     }
 }
 

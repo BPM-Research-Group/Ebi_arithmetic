@@ -24,6 +24,7 @@ pub mod fraction {
     pub mod fraction_exact;
     pub mod fraction_f64;
     pub mod one;
+    pub mod one_minus;
     pub mod recip;
     pub mod round;
     pub mod signed;
@@ -33,6 +34,6 @@ pub mod fraction {
 pub use crate::ebi_matrix::*;
 pub use crate::ebi_number::*;
 pub use crate::exact::*;
+pub use crate::fraction::choose_randomly::FractionRandomCache;
 pub use crate::fraction::fraction::Fraction;
 pub use crate::matrix::fraction_matrix::FractionMatrix;
-pub use crate::fraction::choose_randomly::FractionRandomCache;
