@@ -1,6 +1,8 @@
 use crate::{
     Recip, Round, Signed, Sqrt,
-    fraction::{fraction_exact::FractionExact, fraction_f64::FractionF64},
+    fraction::{
+        fraction_enum::FractionEnum, fraction_exact::FractionExact, fraction_f64::FractionF64,
+    },
 };
 use anyhow::{Result, anyhow};
 use malachite::{
@@ -24,6 +26,21 @@ impl Sqrt for FractionF64 {
 impl Sqrt for FractionExact {
     fn approx_sqrt(&self, precision_decimals: u32) -> Result<Self> {
         Ok(Self(self.0.approx_sqrt(precision_decimals)?))
+    }
+}
+
+impl Sqrt for FractionEnum {
+    fn approx_sqrt(&self, precision_decimals: u32) -> Result<Self>
+    where
+        Self: Sized,
+    {
+        match self {
+            FractionEnum::Exact(f) => Ok(FractionEnum::Exact(f.approx_sqrt(precision_decimals)?)),
+            FractionEnum::Approx(f) => Ok(FractionEnum::Approx(f.approx_sqrt(precision_decimals)?)),
+            FractionEnum::CannotCombineExactAndApprox => {
+                Err(anyhow!("cannot combine exact and approximate arithmetic"))
+            }
+        }
     }
 }
 
