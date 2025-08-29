@@ -28,6 +28,7 @@ pub mod fraction {
     pub mod recip;
     pub mod round;
     pub mod signed;
+    pub mod sqrt;
     pub mod zero;
 }
 

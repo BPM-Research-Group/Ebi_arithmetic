@@ -105,3 +105,33 @@ pub trait ChooseRandomly {
     where
         Self: Sized;
 }
+
+pub trait Sqrt {
+    /// # Calculates the approximate square root of the value
+    ///
+    /// Calculates the approximate square root of `value`.  If the returned value is
+    /// `Ok(_)`, then it is guaranteed to be within `epsilon` of the actual
+    /// answer.  If `epsilon <= 0.0`, then `Err` is returned (the reason for the
+    /// bound of `0.0` is because the approximation algorithm is unable to return an
+    /// exact answer).  If `value < 0.0`, then `Err` is returned (`BigRational` is
+    /// a real valued object; it cannot represent complex values).  In both `Err`
+    /// cases, the value will be a `String` explaining what the error actually is.
+    ///
+    /// # Parameters
+    ///
+    /// - `value` - The value whose approximate square root you wish to obtain.  If
+    ///     this is less than `0.0`, then `Err` will be returned.
+    /// - `epsilon` - The maximum acceptable difference between the returned value
+    ///     and the actual value.  The returned value is in the range
+    ///     `[actual - 1/10^decimals, actual + 1/10^decimals]`.
+    ///
+    /// # Returns
+    ///
+    /// If everything went as expected, then `Ok(_)` will be returned, containing
+    /// a value that is within `± epsilon` of the actual value.  If anything went
+    /// wrong, then `Err(_)` will be returned, containing a `String` outlining what
+    /// the problem was.
+    fn approx_sqrt(&self, precision_decimals: u32) -> Result<Self>
+    where
+        Self: Sized;
+}
