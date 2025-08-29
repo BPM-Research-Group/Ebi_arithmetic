@@ -134,4 +134,11 @@ pub trait Sqrt {
     fn approx_sqrt(&self, precision_decimals: u32) -> Result<Self>
     where
         Self: Sized;
+
+    fn approx_abs_sqrt(self, precision_decimals: u32) -> Self
+    where
+        Self: Sized + Signed,
+    {
+        self.abs().approx_sqrt(precision_decimals).unwrap()
+    }
 }
