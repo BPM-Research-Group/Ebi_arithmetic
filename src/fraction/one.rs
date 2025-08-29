@@ -1,4 +1,4 @@
-use malachite::{Integer, base::num::basic::traits::One as MOne, rational::Rational};
+use malachite::{base::num::basic::traits::One as MOne, rational::Rational, Integer, Natural};
 
 use crate::{
     ebi_number::One,
@@ -62,6 +62,16 @@ impl One for Rational {
 
     fn is_one(&self) -> bool {
         self == &Rational::ONE
+    }
+}
+
+impl One for Natural {
+    fn one() -> Self {
+        Natural::ONE.clone()
+    }
+
+    fn is_one(&self) -> bool {
+        self == &Natural::ONE
     }
 }
 
