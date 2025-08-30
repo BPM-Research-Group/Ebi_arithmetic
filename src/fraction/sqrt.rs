@@ -1,5 +1,5 @@
 use crate::{
-    Recip, Round, Signed, Sqrt,
+    Recip, Signed, Sqrt,
     fraction::{
         fraction_enum::FractionEnum, fraction_exact::FractionExact, fraction_f64::FractionF64,
     },
@@ -9,6 +9,7 @@ use malachite::{
     Integer, Natural,
     base::num::{
         basic::traits::{One, Two, Zero},
+        conversion::traits::IsInteger,
         logic::traits::SignificantBits,
     },
     rational::Rational,
@@ -73,7 +74,7 @@ impl Sqrt for Rational {
 
         // First try whether the result is an integer
         // Step 1: the number itself needs to be an integer
-        if self == &self.clone().floor() {
+        if self.is_integer() {
             //perform binary search on the root
             let floor: Natural =
                 malachite::base::num::arithmetic::traits::Ceiling::ceiling(self.clone())
