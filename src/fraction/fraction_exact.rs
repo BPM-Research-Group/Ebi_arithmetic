@@ -108,6 +108,12 @@ impl From<&Arc<FractionExact>> for FractionExact {
     }
 }
 
+impl From<Rational> for FractionExact {
+    fn from(value: Rational) -> Self {
+        Self(value)
+    }
+}
+
 macro_rules! from_1 {
     ($t:ident, $u:ident) => {
         impl From<($t, $u)> for FractionExact {
