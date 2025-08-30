@@ -570,4 +570,35 @@ mod tests {
         let one = one.neg();
         assert!(one.is_negative());
     }
+
+    #[test]
+    fn fraction_parse() {
+        let x = "0.2".to_owned();
+        let f: FractionF64 = x.parse().unwrap();
+        assert_eq!(f, FractionF64::from((1, 5)));
+
+        assert_eq!("1".parse::<FractionF64>().unwrap(), FractionF64::one());
+        assert_eq!("-1".parse::<FractionF64>().unwrap(), -FractionF64::one());
+
+        assert_eq!("1.00".parse::<FractionF64>().unwrap(), FractionF64::one());
+        assert_eq!("-1.00".parse::<FractionF64>().unwrap(), -FractionF64::one());
+
+        assert_eq!(
+            "1/5".parse::<FractionF64>().unwrap(),
+            FractionF64::from((1, 5))
+        );
+        assert_eq!(
+            "-1/5".parse::<FractionF64>().unwrap(),
+            -FractionF64::from((1, 5))
+        );
+
+        assert_eq!(
+            ".2".parse::<FractionF64>().unwrap(),
+            FractionF64::from((1, 5))
+        );
+        assert_eq!(
+            "-.2".parse::<FractionF64>().unwrap(),
+            -FractionF64::from((1, 5))
+        );
+    }
 }
