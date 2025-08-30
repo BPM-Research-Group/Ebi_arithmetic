@@ -1,5 +1,5 @@
 use anyhow::{Error, anyhow};
-use malachite::rational::Rational;
+use malachite::{Integer, Natural, rational::Rational};
 use std::{
     borrow::Borrow,
     cmp::Ordering,
@@ -27,6 +27,58 @@ impl FromStr for FractionExact {
     type Err = Error;
 
     fn from_str(s: &str) -> std::prelude::v1::Result<Self, Self::Err> {
+        //integer
+        if let Ok(n) = s.parse::<Integer>() {
+            return Ok(Self(n.into()));
+        }
+
+        //float
+        {
+            if s.starts_with('-') {
+                //negative
+                let s = &s[1..];
+                let mut arr = s.split('.');
+                if let Some(mut int) = arr.next() {
+                    if int.len() == 0 {
+                        int = &"0";
+                    }
+                    if let Some(dec) = arr.next() {
+                        let digits = dec.len() as u32;
+                        match (int.parse::<Natural>(), dec.parse::<Natural>()) {
+                            (Ok(num), Ok(den)) => {
+                                return Ok(-Self(
+                                    Rational::from(num)
+                                        + Rational::from(den) / Rational::from(10_u64.pow(digits)),
+                                ));
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+            } else {
+                //positive
+                let mut arr = s.split('.');
+                if let Some(mut int) = arr.next() {
+                    if int.len() == 0 {
+                        int = &"0";
+                    }
+                    if let Some(dec) = arr.next() {
+                        let digits = dec.len() as u32;
+                        match (int.parse::<Natural>(), dec.parse::<Natural>()) {
+                            (Ok(num), Ok(den)) => {
+                                return Ok(Self(
+                                    Rational::from(num)
+                                        + Rational::from(den) / Rational::from(10_u64.pow(digits)),
+                                ));
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+            }
+        }
+
+        //fraction
         Ok(Self(match Rational::from_str(s) {
             Ok(x) => x,
             Err(_) => {
@@ -597,5 +649,45 @@ mod tests {
         assert!(one.is_positive());
         let one = one.neg();
         assert!(one.is_negative());
+    }
+
+    #[test]
+    fn fraction_parse() {
+        let x = "0.2".to_owned();
+        let f: FractionExact = x.parse().unwrap();
+        assert_eq!(f, FractionExact::from((1, 5)));
+
+        assert_eq!("1".parse::<FractionExact>().unwrap(), FractionExact::one());
+        assert_eq!(
+            "-1".parse::<FractionExact>().unwrap(),
+            -FractionExact::one()
+        );
+
+        assert_eq!(
+            "1.00".parse::<FractionExact>().unwrap(),
+            FractionExact::one()
+        );
+        assert_eq!(
+            "-1.00".parse::<FractionExact>().unwrap(),
+            -FractionExact::one()
+        );
+
+        assert_eq!(
+            "1/5".parse::<FractionExact>().unwrap(),
+            FractionExact::from((1, 5))
+        );
+        assert_eq!(
+            "-1/5".parse::<FractionExact>().unwrap(),
+            -FractionExact::from((1, 5))
+        );
+
+        assert_eq!(
+            ".2".parse::<FractionExact>().unwrap(),
+            FractionExact::from((1, 5))
+        );
+        assert_eq!(
+            "-.2".parse::<FractionExact>().unwrap(),
+            -FractionExact::from((1, 5))
+        );
     }
 }
