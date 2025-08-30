@@ -130,24 +130,6 @@ impl EbiMatrix<FractionEnum> for FractionMatrixEnum {
     }
 }
 
-impl MaybeExact for FractionMatrixEnum {
-    type Approximate = ();
-
-    type Exact = FractionMatrixEnum;
-
-    fn is_exact(&self) -> bool {
-        true
-    }
-
-    fn extract_approx(&self) -> anyhow::Result<&()> {
-        Err(anyhow!("cannot extract a float from a fraction"))
-    }
-
-    fn extract_exact(&self) -> anyhow::Result<&FractionMatrixEnum> {
-        Ok(self)
-    }
-}
-
 impl TryFrom<Vec<Vec<FractionEnum>>> for FractionMatrixEnum {
     type Error = Error;
 

@@ -1,6 +1,9 @@
 use crate::{
     exact::MaybeExact,
-    matrix::{fraction_matrix_exact::FractionMatrixExact, fraction_matrix_f64::FractionMatrixF64},
+    matrix::{
+        fraction_matrix_enum::FractionMatrixEnum, fraction_matrix_exact::FractionMatrixExact,
+        fraction_matrix_f64::FractionMatrixF64,
+    },
 };
 use anyhow::anyhow;
 
@@ -17,6 +20,14 @@ impl MaybeExact for FractionMatrixF64 {
     }
 
     fn extract_exact(&self) -> anyhow::Result<&Self::Exact> {
+        Err(anyhow!("cannot extract a fraction from a float"))
+    }
+
+    fn to_approx(self) -> anyhow::Result<Self::Approximate> {
+        Ok(self)
+    }
+
+    fn to_exact(self) -> anyhow::Result<Self::Exact> {
         Err(anyhow!("cannot extract a fraction from a float"))
     }
 }
@@ -36,5 +47,63 @@ impl MaybeExact for FractionMatrixExact {
 
     fn extract_exact(&self) -> anyhow::Result<&Self::Exact> {
         Ok(self)
+    }
+
+    fn to_approx(self) -> anyhow::Result<Self::Approximate> {
+        Err(anyhow!("cannot extract a float from a fraction"))
+    }
+
+    fn to_exact(self) -> anyhow::Result<Self::Exact> {
+        Ok(self)
+    }
+}
+
+impl MaybeExact for FractionMatrixEnum {
+    type Approximate = FractionMatrixF64;
+
+    type Exact = FractionMatrixExact;
+
+    fn is_exact(&self) -> bool {
+        true
+    }
+
+    fn extract_approx(&self) -> anyhow::Result<&Self::Approximate> {
+        match self {
+            FractionMatrixEnum::Approx(f) => Ok(f),
+            FractionMatrixEnum::Exact(_) => Err(anyhow!("cannot extract a fraction from a float")),
+            FractionMatrixEnum::CannotCombineExactAndApprox => {
+                Err(anyhow!("cannot combine exact and approximate arithmetic"))
+            }
+        }
+    }
+
+    fn extract_exact(&self) -> anyhow::Result<&FractionMatrixExact> {
+        match self {
+            FractionMatrixEnum::Approx(_) => Err(anyhow!("cannot extract a float from a fraction")),
+            FractionMatrixEnum::Exact(f) => Ok(f),
+            FractionMatrixEnum::CannotCombineExactAndApprox => {
+                Err(anyhow!("cannot combine exact and approximate arithmetic"))
+            }
+        }
+    }
+
+    fn to_approx(self) -> anyhow::Result<Self::Approximate> {
+        match self {
+            FractionMatrixEnum::Approx(f) => Ok(f),
+            FractionMatrixEnum::Exact(_) => Err(anyhow!("cannot extract a fraction from a float")),
+            FractionMatrixEnum::CannotCombineExactAndApprox => {
+                Err(anyhow!("cannot combine exact and approximate arithmetic"))
+            }
+        }
+    }
+
+    fn to_exact(self) -> anyhow::Result<FractionMatrixExact> {
+        match self {
+            FractionMatrixEnum::Approx(_) => Err(anyhow!("cannot extract a float from a fraction")),
+            FractionMatrixEnum::Exact(f) => Ok(f),
+            FractionMatrixEnum::CannotCombineExactAndApprox => {
+                Err(anyhow!("cannot combine exact and approximate arithmetic"))
+            }
+        }
     }
 }

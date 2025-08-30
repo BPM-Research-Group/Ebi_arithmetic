@@ -23,6 +23,14 @@ impl MaybeExact for FractionF64 {
     fn extract_exact(&self) -> Result<&Self::Exact> {
         Err(anyhow!("cannot extract a fraction from a float"))
     }
+
+    fn to_approx(self) -> Result<f64> {
+        Ok(self.0)
+    }
+
+    fn to_exact(self) -> Result<Self::Exact> {
+        Err(anyhow!("cannot extract a fraction from a float"))
+    }
 }
 
 impl MaybeExact for FractionExact {
@@ -37,12 +45,16 @@ impl MaybeExact for FractionExact {
         Err(anyhow!("cannot extract a float from a fraction"))
     }
 
-    /**
-     * This is a low-level function to extract an f64. Only use if you are sure that the fraction is exact.
-     * May not be available in all compilation modes.
-     */
     fn extract_exact(&self) -> Result<&Rational> {
         Ok(&self.0)
+    }
+
+    fn to_approx(self) -> Result<f64> {
+        Err(anyhow!("cannot extract a float from a fraction"))
+    }
+
+    fn to_exact(self) -> Result<Rational> {
+        Ok(self.0)
     }
 }
 
@@ -77,6 +89,26 @@ impl MaybeExact for FractionEnum {
             }
         }
     }
+
+    fn to_approx(self) -> Result<f64> {
+        match self {
+            FractionEnum::Exact(_) => Err(anyhow!("cannot extract a float from a fraction")),
+            FractionEnum::Approx(f) => Ok(f),
+            FractionEnum::CannotCombineExactAndApprox => {
+                Err(anyhow!("cannot combine exact and approximate arithmetic"))
+            }
+        }
+    }
+
+    fn to_exact(self) -> Result<Rational> {
+        match self {
+            FractionEnum::Exact(f) => Ok(f),
+            FractionEnum::Approx(_) => Err(anyhow!("cannot extract a fraction from a float")),
+            FractionEnum::CannotCombineExactAndApprox => {
+                Err(anyhow!("cannot combine exact and approximate arithmetic"))
+            }
+        }
+    }
 }
 
 impl MaybeExact for Rational {
@@ -93,6 +125,16 @@ impl MaybeExact for Rational {
     }
 
     fn extract_exact(&self) -> Result<&Self::Exact> {
+        Ok(self)
+    }
+
+    fn to_approx(self) -> Result<Self::Approximate> {
+        Err(anyhow!(
+            "cannot extract an approximate float from an fraction"
+        ))
+    }
+
+    fn to_exact(self) -> Result<Self::Exact> {
         Ok(self)
     }
 }
@@ -115,6 +157,16 @@ impl MaybeExact for Integer {
     fn extract_exact(&self) -> Result<&Self::Exact> {
         Ok(self)
     }
+
+    fn to_approx(self) -> Result<Self::Approximate> {
+        Err(anyhow!(
+            "cannot extract an approximate integer from an integer"
+        ))
+    }
+
+    fn to_exact(self) -> Result<Self::Exact> {
+        Ok(self)
+    }
 }
 
 impl MaybeExact for Natural {
@@ -133,6 +185,16 @@ impl MaybeExact for Natural {
     }
 
     fn extract_exact(&self) -> Result<&Self::Exact> {
+        Ok(self)
+    }
+
+    fn to_approx(self) -> Result<Self::Approximate> {
+        Err(anyhow!(
+            "cannot extract an approximate integer from an integer"
+        ))
+    }
+
+    fn to_exact(self) -> Result<Self::Exact> {
         Ok(self)
     }
 }
@@ -154,6 +216,14 @@ macro_rules! approx {
             fn extract_exact(&self) -> Result<&Self::Exact> {
                 Err(anyhow!("cannot extract exact value"))
             }
+
+            fn to_approx(self) -> Result<Self::Approximate> {
+                Ok(self)
+            }
+
+            fn to_exact(self) -> Result<Self::Exact> {
+                Err(anyhow!("cannot extract exact value"))
+            }
         }
     };
 }
@@ -173,6 +243,14 @@ macro_rules! exact {
             }
 
             fn extract_exact(&self) -> Result<&Self::Exact> {
+                Ok(self)
+            }
+
+            fn to_approx(self) -> Result<Self::Approximate> {
+                Err(anyhow!("cannot extract approximate value"))
+            }
+
+            fn to_exact(self) -> Result<Self::Exact> {
                 Ok(self)
             }
         }
