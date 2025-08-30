@@ -17,7 +17,7 @@ use std::{
 use crate::{
     ebi_number::Zero,
     exact::is_exact_globally,
-    fraction::fraction::EPSILON,
+    fraction::{fraction::EPSILON, fraction_exact::FractionExact},
 };
 
 #[derive(Clone)]
@@ -51,8 +51,8 @@ impl FromStr for FractionEnum {
 
     fn from_str(s: &str) -> std::prelude::v1::Result<Self, Self::Err> {
         if is_exact_globally() {
-            match Rational::from_str(s) {
-                Ok(x) => Ok(FractionEnum::Exact(x)),
+            match FractionExact::from_str(s) {
+                Ok(x) => Ok(FractionEnum::Exact(x.0)),
                 Err(_) => Err(anyhow!("{} is not a fraction", s)),
             }
         } else {
@@ -739,5 +739,39 @@ mod tests {
         assert!(one.is_positive());
         let one = one.neg();
         assert!(one.is_negative());
+    }
+
+    #[test]
+    fn fraction_parse() {
+        let x = "0.2".to_owned();
+        let f: FractionEnum = x.parse().unwrap();
+        assert_eq!(f, FractionEnum::from((1, 5)));
+
+        assert_eq!("1".parse::<FractionEnum>().unwrap(), FractionEnum::one());
+        assert_eq!("-1".parse::<FractionEnum>().unwrap(), -FractionEnum::one());
+
+        assert_eq!("1.00".parse::<FractionEnum>().unwrap(), FractionEnum::one());
+        assert_eq!(
+            "-1.00".parse::<FractionEnum>().unwrap(),
+            -FractionEnum::one()
+        );
+
+        assert_eq!(
+            "1/5".parse::<FractionEnum>().unwrap(),
+            FractionEnum::from((1, 5))
+        );
+        assert_eq!(
+            "-1/5".parse::<FractionEnum>().unwrap(),
+            -FractionEnum::from((1, 5))
+        );
+
+        assert_eq!(
+            ".2".parse::<FractionEnum>().unwrap(),
+            FractionEnum::from((1, 5))
+        );
+        assert_eq!(
+            "-.2".parse::<FractionEnum>().unwrap(),
+            -FractionEnum::from((1, 5))
+        );
     }
 }
