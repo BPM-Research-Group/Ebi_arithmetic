@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+
 use crate::{
     ebi_number::{Signed, Zero},
     fraction::{
@@ -7,7 +9,10 @@ use crate::{
 };
 use malachite::{
     Integer, Natural,
-    base::num::{arithmetic::traits::Abs, basic::traits::Zero as MZero},
+    base::num::{
+        arithmetic::traits::{Abs, Sign},
+        basic::traits::Zero as MZero,
+    },
     rational::Rational,
 };
 
@@ -215,3 +220,17 @@ ttype_signed!(i64);
 ttype_signed!(i32);
 ttype_signed!(i16);
 ttype_signed!(i8);
+
+pub trait Numerator {
+    fn signed_numerator(&self) -> Integer;
+}
+
+impl Numerator for Rational {
+    fn signed_numerator(&self) -> Integer {
+        if self.sign() == Ordering::Less {
+            -self.numerator_ref()
+        } else {
+            self.to_numerator().into()
+        }
+    }
+}
