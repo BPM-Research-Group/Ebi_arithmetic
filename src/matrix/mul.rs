@@ -1,10 +1,13 @@
 use anyhow::{Result, anyhow};
 use itertools::iproduct;
-use malachite::{base::num::basic::traits::Zero, rational::Rational};
+use malachite::{base::num::basic::traits::Zero as MZero, rational::Rational};
 use std::ops::Mul;
 
 use crate::{
-    EbiMatrix,
+    EbiMatrix, MaybeExact, Zero,
+    fraction::{
+        fraction_enum::FractionEnum, fraction_exact::FractionExact, fraction_f64::FractionF64,
+    },
     matrix::{
         fraction_matrix_enum::FractionMatrixEnum, fraction_matrix_exact::FractionMatrixExact,
         fraction_matrix_f64::FractionMatrixF64,
@@ -93,6 +96,87 @@ impl Mul for &FractionMatrixEnum {
                 Ok(FractionMatrixEnum::Exact((m1 * m2)?))
             }
             _ => Ok(FractionMatrixEnum::CannotCombineExactAndApprox),
+        }
+    }
+}
+
+impl Mul<Vec<FractionF64>> for &FractionMatrixF64 {
+    type Output = Result<Vec<FractionF64>>;
+
+    fn mul(self, rhs: Vec<FractionF64>) -> Self::Output {
+        if self.number_of_rows() != rhs.len() {
+            return Err(anyhow!(
+                "cannot multiply matrix of size {}x{} with a vector of size {}",
+                self.number_of_rows(),
+                self.number_of_columns(),
+                rhs.len(),
+            ));
+        }
+
+        let mut result = vec![FractionF64::zero(); self.number_of_rows()];
+        for row in 0..self.number_of_rows() {
+            for column in 0..self.number_of_columns() {
+                result[column] +=
+                    &FractionF64(self.values[row * self.number_of_columns + column]) * &rhs[row];
+            }
+        }
+
+        Ok(result)
+    }
+}
+
+impl Mul<Vec<FractionExact>> for &FractionMatrixExact {
+    type Output = Result<Vec<FractionExact>>;
+
+    fn mul(self, rhs: Vec<FractionExact>) -> Self::Output {
+        if self.number_of_rows() != rhs.len() {
+            return Err(anyhow!(
+                "cannot multiply matrix of size {}x{} with a vector of size {}",
+                self.number_of_rows(),
+                self.number_of_columns(),
+                rhs.len(),
+            ));
+        }
+
+        let mut result = vec![FractionExact::zero(); self.number_of_rows()];
+        for row in 0..self.number_of_rows() {
+            for column in 0..self.number_of_columns() {
+                result[column] += FractionExact(
+                    &self.values[row * self.number_of_columns + column] * &rhs[row].0,
+                );
+            }
+        }
+
+        Ok(result)
+    }
+}
+
+impl Mul<Vec<FractionEnum>> for &FractionMatrixEnum {
+    type Output = Result<Vec<FractionEnum>>;
+
+    fn mul(self, rhs: Vec<FractionEnum>) -> Self::Output {
+        match self {
+            FractionMatrixEnum::Approx(m1) => {
+                let mut rhs2 = Vec::with_capacity(rhs.len());
+                for x in rhs {
+                    rhs2.push(FractionF64(x.to_approx()?));
+                }
+                Ok((m1 * rhs2)?
+                    .into_iter()
+                    .map(|x| FractionEnum::Approx(x.0))
+                    .collect())
+            }
+            FractionMatrixEnum::Exact(m1) => {
+                let mut rhs2 = Vec::with_capacity(rhs.len());
+                for x in rhs {
+                    rhs2.push(FractionExact(x.to_exact()?));
+                }
+                Ok((m1 * rhs2)?
+                    .into_iter()
+                    .map(|x| FractionEnum::Exact(x.0))
+                    .collect())
+            }
+            _ => Err(anyhow!("cannot combine approximate and exact arithmetic")),
         }
     }
 }

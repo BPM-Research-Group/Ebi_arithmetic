@@ -1,16 +1,16 @@
-use anyhow::{Result, anyhow};
 use malachite::{base::num::basic::traits::One, rational::Rational};
 
 use crate::{
+    IdentityMinus,
     ebi_matrix::EbiMatrix,
     matrix::{
         fraction_matrix_enum::FractionMatrixEnum, fraction_matrix_exact::FractionMatrixExact,
         fraction_matrix_f64::FractionMatrixF64,
-    }, IdentityMinus,
+    },
 };
 
 impl IdentityMinus for FractionMatrixF64 {
-    fn identity_minus(&mut self) -> Result<()> {
+    fn identity_minus(&mut self) {
         for i in 0..self.number_of_rows() {
             for j in 0..self.number_of_columns() {
                 if i == j {
@@ -22,12 +22,11 @@ impl IdentityMinus for FractionMatrixF64 {
                 }
             }
         }
-        Ok(())
     }
 }
 
 impl IdentityMinus for FractionMatrixExact {
-    fn identity_minus(&mut self) -> Result<()> {
+    fn identity_minus(&mut self) {
         for i in 0..self.number_of_rows() {
             for j in 0..self.number_of_columns() {
                 if i == j {
@@ -39,18 +38,15 @@ impl IdentityMinus for FractionMatrixExact {
                 }
             }
         }
-        Ok(())
     }
 }
 
 impl IdentityMinus for FractionMatrixEnum {
-    fn identity_minus(&mut self) -> Result<()> {
+    fn identity_minus(&mut self) {
         match self {
             FractionMatrixEnum::Approx(m) => m.identity_minus(),
             FractionMatrixEnum::Exact(m) => m.identity_minus(),
-            FractionMatrixEnum::CannotCombineExactAndApprox => {
-                Err(anyhow!("cannot combine approximate and exact arithmetic"))
-            }
+            FractionMatrixEnum::CannotCombineExactAndApprox => {}
         }
     }
 }
@@ -68,7 +64,7 @@ mod tests {
     fn fraction_matrix_abnormal() {
         let mut m1: FractionMatrixEnum = vec![vec![f_en!(8, 3), f_en!(3, 8)]].try_into().unwrap();
 
-        m1.identity_minus().unwrap();
+        m1.identity_minus();
 
         let m3: FractionMatrixEnum = vec![vec![-f_en!(5, 3), -f_en!(3, 8)]].try_into().unwrap();
 

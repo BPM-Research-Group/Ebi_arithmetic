@@ -84,7 +84,7 @@ where
 pub trait IdentityMinus {
     /// For a given matrix M, computes I-M.
     /// The matrix does not need to be squared.
-    fn identity_minus(&mut self) -> Result<()>;
+    fn identity_minus(&mut self);
 }
 
 pub trait Inversion {
