@@ -6,8 +6,7 @@ use malachite::{
 };
 
 use crate::{
-    One, Zero, ebi_matrix::EbiMatrix, fraction::fraction_exact::FractionExact, pop_front_columns,
-    push_columns,
+    ebi_matrix::EbiMatrix, fraction::fraction_exact::FractionExact, pop_front_columns, push_columns, One, Signed, Zero
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -111,6 +110,14 @@ impl EbiMatrix<FractionExact> for FractionMatrixExact {
         for column in 0..self.number_of_columns {
             self.values[row * self.number_of_columns + column] = Rational::zero();
         }
+    }
+
+    fn is_positive(&self, row: usize, column: usize) -> bool {
+        Signed::is_positive(&self.values[row * self.number_of_columns + column])
+    }
+
+    fn is_negative(&self, row: usize, column: usize) -> bool {
+        Signed::is_negative(&self.values[row * self.number_of_columns + column])
     }
 }
 

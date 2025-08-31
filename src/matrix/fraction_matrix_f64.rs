@@ -1,5 +1,5 @@
 use crate::{
-    One,
+    One, Signed,
     ebi_matrix::EbiMatrix,
     ebi_number::Zero,
     fraction::{fraction::EPSILON, fraction_f64::FractionF64},
@@ -109,6 +109,14 @@ impl EbiMatrix<FractionF64> for FractionMatrixF64 {
         for column in 0..self.number_of_columns {
             self.values[row * self.number_of_columns + column] = 0f64;
         }
+    }
+
+    fn is_positive(&self, row: usize, column: usize) -> bool {
+        Signed::is_positive(&self.values[row * self.number_of_columns + column])
+    }
+
+    fn is_negative(&self, row: usize, column: usize) -> bool {
+        Signed::is_negative(&self.values[row * self.number_of_columns + column])
     }
 }
 

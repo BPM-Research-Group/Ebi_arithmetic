@@ -183,6 +183,22 @@ impl EbiMatrix<FractionEnum> for FractionMatrixEnum {
             FractionMatrixEnum::CannotCombineExactAndApprox => {}
         }
     }
+
+    fn is_positive(&self, row: usize, column: usize) -> bool {
+        match self {
+            FractionMatrixEnum::Approx(m) => m.is_positive(row, column),
+            FractionMatrixEnum::Exact(m) => m.is_positive(row, column),
+            FractionMatrixEnum::CannotCombineExactAndApprox => false,
+        }
+    }
+
+    fn is_negative(&self, row: usize, column: usize) -> bool {
+        match self {
+            FractionMatrixEnum::Approx(m) => m.is_negative(row, column),
+            FractionMatrixEnum::Exact(m) => m.is_negative(row, column),
+            FractionMatrixEnum::CannotCombineExactAndApprox => false,
+        }
+    }
 }
 
 impl TryFrom<Vec<Vec<FractionEnum>>> for FractionMatrixEnum {

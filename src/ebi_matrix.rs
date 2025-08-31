@@ -33,6 +33,14 @@ where
     /// If row and column do not exist, behaviour is undefined, and may panic.
     fn is_one(&self, row: usize, column: usize) -> bool;
 
+    /// Returns whether a value of the matrix is larger than zero.
+    /// If row and column do not exist, behaviour is undefined, and may panic.
+    fn is_positive(&self, row: usize, column: usize) -> bool;
+
+    /// Returns whether a value of the matrix is larger than zero.
+    /// If row and column do not exist, behaviour is undefined, and may panic.
+    fn is_negative(&self, row: usize, column: usize) -> bool;
+
     /// Sets a particular value of the matrix, if the row and column exist.
     /// If row and column do not exist, behaviour is undefined, and may panic.
     /// Prefer set_one and set_zero if possible.
