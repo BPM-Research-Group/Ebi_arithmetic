@@ -115,10 +115,10 @@ impl Inversion for FractionMatrixEnum {
 #[cfg(test)]
 mod tests {
     use crate::{
-        fraction::fraction_f64::FractionF64,
+        fraction::{fraction_enum::FractionEnum, fraction_f64::FractionF64},
         matrix::{
-            fraction_matrix_exact::FractionMatrixExact, fraction_matrix_f64::FractionMatrixF64,
-            inversion::Inversion,
+            fraction_matrix_enum::FractionMatrixEnum, fraction_matrix_exact::FractionMatrixExact,
+            fraction_matrix_f64::FractionMatrixF64, inversion::Inversion,
         },
     };
 
@@ -181,5 +181,40 @@ mod tests {
         // println!("\t\tcorrect inverse    {:?}", i);
 
         assert!(m.eq(&mut i));
+    }
+
+    #[test]
+    fn inverse() {
+        let mut m: FractionMatrixEnum = vec![
+            vec![1.into(), 0.into(), 0.into(), 0.into()],
+            vec![0.into(), 1.into(), 0.into(), FractionEnum::from((-3, 5))],
+            vec![0.into(), FractionEnum::from((-3, 4)), 1.into(), 0.into()],
+            vec![0.into(), 0.into(), 0.into(), 1.into()],
+        ]
+        .try_into()
+        .unwrap();
+
+        println!("matrix {}", m);
+
+        let i = vec![
+            vec![1.into(), 0.into(), 0.into(), 0.into()],
+            vec![0.into(), 1.into(), 0.into(), FractionEnum::from((3, 5))],
+            vec![
+                0.into(),
+                FractionEnum::from((3, 4)),
+                1.into(),
+                FractionEnum::from((9, 20)),
+            ],
+            vec![0.into(), 0.into(), 0.into(), 1.into()],
+        ]
+        .try_into()
+        .unwrap();
+
+        m = m.invert().unwrap();
+
+        println!("inverted matrix {}", m);
+        println!("correct inverse {}", i);
+
+        assert_eq!(m, i);
     }
 }

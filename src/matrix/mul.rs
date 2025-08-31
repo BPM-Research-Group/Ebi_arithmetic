@@ -113,15 +113,14 @@ impl Mul<&Vec<FractionF64>> for &FractionMatrixF64 {
             ));
         }
 
-        let mut result = vec![FractionF64::zero(); self.number_of_rows()];
+        let mut result = vec![f64::zero(); self.number_of_rows()];
         for row in 0..self.number_of_rows() {
             for column in 0..self.number_of_columns() {
-                result[column] +=
-                    &FractionF64(self.values[row * self.number_of_columns + column]) * &rhs[row];
+                result[row] += &self.values[row * self.number_of_columns() + column]
+                    * rhs[column].approx_ref()?;
             }
         }
-
-        Ok(result)
+        Ok(result.into_iter().map(|f| FractionF64(f)).collect())
     }
 }
 
@@ -138,16 +137,14 @@ impl Mul<&Vec<FractionExact>> for &FractionMatrixExact {
             ));
         }
 
-        let mut result = vec![FractionExact::zero(); self.number_of_rows()];
+        let mut result = vec![Rational::zero(); self.number_of_rows()];
         for row in 0..self.number_of_rows() {
             for column in 0..self.number_of_columns() {
-                result[column] += FractionExact(
-                    &self.values[row * self.number_of_columns + column] * &rhs[row].0,
-                );
+                result[row] += &self.values[row * self.number_of_columns() + column]
+                    * rhs[column].exact_ref()?;
             }
         }
-
-        Ok(result)
+        Ok(result.into_iter().map(|f| FractionExact(f)).collect())
     }
 }
 
@@ -166,30 +163,27 @@ impl Mul<&Vec<FractionEnum>> for &FractionMatrixEnum {
 
         match self {
             FractionMatrixEnum::Approx(m) => {
-                let mut result = vec![FractionEnum::Approx(0f64); self.number_of_rows()];
-                for row in 0..m.number_of_rows() {
-                    for column in 0..m.number_of_columns() {
-                        result[column] += FractionEnum::Approx(
-                            &m.values[row * m.number_of_columns + column]
-                                * rhs[row].approx_ref()?,
-                        );
+                let mut result = vec![f64::zero(); self.number_of_rows()];
+                for row in 0..self.number_of_rows() {
+                    for column in 0..self.number_of_columns() {
+                        result[row] += &m.values[row * self.number_of_columns() + column]
+                            * rhs[column].approx_ref()?;
                     }
                 }
-
-                Ok(result)
+                Ok(result
+                    .into_iter()
+                    .map(|f| FractionEnum::Approx(f))
+                    .collect())
             }
             FractionMatrixEnum::Exact(m) => {
-                let mut result = vec![FractionEnum::Exact(Rational::zero()); self.number_of_rows()];
-                for row in 0..m.number_of_rows() {
-                    for column in 0..m.number_of_columns() {
-                        result[column] += FractionEnum::Exact(
-                            &m.values[row * m.number_of_columns + column]
-                                * rhs[row].exact_ref()?,
-                        );
+                let mut result = vec![Rational::zero(); self.number_of_rows()];
+                for row in 0..self.number_of_rows() {
+                    for column in 0..self.number_of_columns() {
+                        result[row] += &m.values[row * self.number_of_columns() + column]
+                            * rhs[column].exact_ref()?;
                     }
                 }
-
-                Ok(result)
+                Ok(result.into_iter().map(|f| FractionEnum::Exact(f)).collect())
             }
             _ => Err(anyhow!("cannot combine approximate and exact arithmetic")),
         }
@@ -199,10 +193,16 @@ impl Mul<&Vec<FractionEnum>> for &FractionMatrixEnum {
 #[cfg(test)]
 mod tests {
 
-    use crate::{EbiMatrix, MaybeExact, fraction::fraction::Fraction};
+    use crate::{
+        EbiMatrix, MaybeExact,
+        fraction::{fraction::Fraction, fraction_enum::FractionEnum},
+        matrix::fraction_matrix_enum::FractionMatrixEnum,
+        set_exact_globally,
+    };
     use std::time::Instant;
 
     use rand::Rng;
+    use serial_test::serial;
 
     use crate::{
         f,
@@ -433,5 +433,80 @@ mod tests {
 
             println!("approx f64:    {:.2?}", before.elapsed());
         }
+    }
+
+    #[test]
+    fn matrix_vector_multiplication_enum_exact() {
+        let m: FractionMatrixEnum = vec![
+            vec![6.into(), 2.into(), 4.into()],
+            vec![(-1).into(), 4.into(), 3.into()],
+            vec![(-2).into(), 9.into(), 3.into()],
+        ]
+        .try_into()
+        .unwrap();
+        let v: Vec<FractionEnum> = vec![4.into(), (-2).into(), 1.into()];
+
+        let x = (&m * &v).unwrap();
+
+        let t = vec![24.into(), (-9).into(), (-23).into()];
+
+        assert_eq!(x, t);
+    }
+
+    #[test]
+    #[serial]
+    fn matrix_vector_multiplication_enum_approx() {
+        set_exact_globally(false);
+        let m: FractionMatrixEnum = vec![
+            vec![6.into(), 2.into(), 4.into()],
+            vec![(-1).into(), 4.into(), 3.into()],
+            vec![(-2).into(), 9.into(), 3.into()],
+        ]
+        .try_into()
+        .unwrap();
+        let v: Vec<FractionEnum> = vec![4.into(), (-2).into(), 1.into()];
+
+        let x = (&m * &v).unwrap();
+
+        let t = vec![24.into(), (-9).into(), (-23).into()];
+        set_exact_globally(true);
+
+        assert_eq!(x, t);
+    }
+
+    #[test]
+    fn matrix_vector_multiplication_approx() {
+        let m: FractionMatrixF64 = vec![
+            vec![6.into(), 2.into(), 4.into()],
+            vec![(-1).into(), 4.into(), 3.into()],
+            vec![(-2).into(), 9.into(), 3.into()],
+        ]
+        .try_into()
+        .unwrap();
+        let v: Vec<FractionF64> = vec![4.into(), (-2).into(), 1.into()];
+
+        let x = (&m * &v).unwrap();
+
+        let t = vec![24.into(), (-9).into(), (-23).into()];
+
+        assert_eq!(x, t);
+    }
+
+    #[test]
+    fn matrix_vector_multiplication_exact() {
+        let m: FractionMatrixExact = vec![
+            vec![6.into(), 2.into(), 4.into()],
+            vec![(-1).into(), 4.into(), 3.into()],
+            vec![(-2).into(), 9.into(), 3.into()],
+        ]
+        .try_into()
+        .unwrap();
+        let v: Vec<FractionExact> = vec![4.into(), (-2).into(), 1.into()];
+
+        let x = (&m * &v).unwrap();
+
+        let t = vec![24.into(), (-9).into(), (-23).into()];
+
+        assert_eq!(x, t);
     }
 }
