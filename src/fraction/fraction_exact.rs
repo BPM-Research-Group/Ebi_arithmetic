@@ -114,6 +114,18 @@ impl From<Rational> for FractionExact {
     }
 }
 
+impl From<Natural> for FractionExact {
+    fn from(value: Natural) -> Self {
+        Self(value.into())
+    }
+}
+
+impl From<Integer> for FractionExact {
+    fn from(value: Integer) -> Self {
+        Self(value.into())
+    }
+}
+
 macro_rules! from_1 {
     ($t:ident, $u:ident) => {
         impl From<($t, $u)> for FractionExact {
