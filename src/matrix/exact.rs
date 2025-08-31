@@ -15,19 +15,19 @@ impl MaybeExact for FractionMatrixF64 {
         false
     }
 
-    fn extract_approx(&self) -> anyhow::Result<&Self::Approximate> {
+    fn approx_ref(&self) -> anyhow::Result<&Self::Approximate> {
         Ok(self)
     }
 
-    fn extract_exact(&self) -> anyhow::Result<&Self::Exact> {
+    fn exact_ref(&self) -> anyhow::Result<&Self::Exact> {
         Err(anyhow!("cannot extract a fraction from a float"))
     }
 
-    fn to_approx(self) -> anyhow::Result<Self::Approximate> {
+    fn approx(self) -> anyhow::Result<Self::Approximate> {
         Ok(self)
     }
 
-    fn to_exact(self) -> anyhow::Result<Self::Exact> {
+    fn exact(self) -> anyhow::Result<Self::Exact> {
         Err(anyhow!("cannot extract a fraction from a float"))
     }
 }
@@ -41,19 +41,19 @@ impl MaybeExact for FractionMatrixExact {
         true
     }
 
-    fn extract_approx(&self) -> anyhow::Result<&Self::Approximate> {
+    fn approx_ref(&self) -> anyhow::Result<&Self::Approximate> {
         Err(anyhow!("cannot extract a float from a fraction"))
     }
 
-    fn extract_exact(&self) -> anyhow::Result<&Self::Exact> {
+    fn exact_ref(&self) -> anyhow::Result<&Self::Exact> {
         Ok(self)
     }
 
-    fn to_approx(self) -> anyhow::Result<Self::Approximate> {
+    fn approx(self) -> anyhow::Result<Self::Approximate> {
         Err(anyhow!("cannot extract a float from a fraction"))
     }
 
-    fn to_exact(self) -> anyhow::Result<Self::Exact> {
+    fn exact(self) -> anyhow::Result<Self::Exact> {
         Ok(self)
     }
 }
@@ -67,7 +67,7 @@ impl MaybeExact for FractionMatrixEnum {
         true
     }
 
-    fn extract_approx(&self) -> anyhow::Result<&Self::Approximate> {
+    fn approx_ref(&self) -> anyhow::Result<&Self::Approximate> {
         match self {
             FractionMatrixEnum::Approx(f) => Ok(f),
             FractionMatrixEnum::Exact(_) => Err(anyhow!("cannot extract a fraction from a float")),
@@ -77,7 +77,7 @@ impl MaybeExact for FractionMatrixEnum {
         }
     }
 
-    fn extract_exact(&self) -> anyhow::Result<&FractionMatrixExact> {
+    fn exact_ref(&self) -> anyhow::Result<&FractionMatrixExact> {
         match self {
             FractionMatrixEnum::Approx(_) => Err(anyhow!("cannot extract a float from a fraction")),
             FractionMatrixEnum::Exact(f) => Ok(f),
@@ -87,7 +87,7 @@ impl MaybeExact for FractionMatrixEnum {
         }
     }
 
-    fn to_approx(self) -> anyhow::Result<Self::Approximate> {
+    fn approx(self) -> anyhow::Result<Self::Approximate> {
         match self {
             FractionMatrixEnum::Approx(f) => Ok(f),
             FractionMatrixEnum::Exact(_) => Err(anyhow!("cannot extract a fraction from a float")),
@@ -97,7 +97,7 @@ impl MaybeExact for FractionMatrixEnum {
         }
     }
 
-    fn to_exact(self) -> anyhow::Result<FractionMatrixExact> {
+    fn exact(self) -> anyhow::Result<FractionMatrixExact> {
         match self {
             FractionMatrixEnum::Approx(_) => Err(anyhow!("cannot extract a float from a fraction")),
             FractionMatrixEnum::Exact(f) => Ok(f),

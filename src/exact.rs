@@ -39,14 +39,14 @@ pub trait MaybeExact {
     /**
      * This is a low-level function to extract an approximate value. Will only succeed if the fraction is approximate.
      */
-    fn extract_approx(&self) -> Result<&Self::Approximate>;
+    fn approx_ref(&self) -> Result<&Self::Approximate>;
 
     /**
      * This is a low-level function to extract an exact value. Will only succeed if the fraction is exact.
      */
-    fn extract_exact(&self) -> Result<&Self::Exact>;
+    fn exact_ref(&self) -> Result<&Self::Exact>;
 
-    fn to_approx(self) -> Result<Self::Approximate>;
+    fn approx(self) -> Result<Self::Approximate>;
 
-    fn to_exact(self) -> Result<Self::Exact>;
+    fn exact(self) -> Result<Self::Exact>;
 }

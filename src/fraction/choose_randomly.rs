@@ -106,17 +106,17 @@ impl ChooseRandomly for FractionEnum {
             if let Some(first) = fractions.next() {
                 let mut cumulative_probabilities = vec![
                     first
-                        .extract_exact()
+                        .exact_ref()
                         .with_context(|| "cannot combine exact and approximate arithmetic")?
                         .clone(),
                 ];
-                let mut highest_denom = first.extract_exact()?.to_denominator();
+                let mut highest_denom = first.exact_ref()?.to_denominator();
 
                 while let Some(fraction) = fractions.next() {
-                    highest_denom = highest_denom.max(fraction.extract_exact()?.to_denominator());
+                    highest_denom = highest_denom.max(fraction.exact_ref()?.to_denominator());
 
                     let mut x = fraction
-                        .extract_exact()
+                        .exact_ref()
                         .with_context(|| "cannot combine exact and approximate arithmetic")?
                         .clone();
                     x += cumulative_probabilities.last().unwrap();
@@ -136,14 +136,14 @@ impl ChooseRandomly for FractionEnum {
             if let Some(first) = fractions.next() {
                 let mut cumulative_probabilities = vec![
                     *first
-                        .extract_approx()
+                        .approx_ref()
                         .with_context(|| "cannot combine exact and approximate arithmetic")?,
                 ];
 
                 while let Some(fraction) = fractions.next() {
                     cumulative_probabilities.push(
                         fraction
-                            .extract_approx()
+                            .approx_ref()
                             .with_context(|| "cannot combine exact and approximate arithmetic")?
                             + cumulative_probabilities.last().unwrap(),
                     );
@@ -379,7 +379,7 @@ impl ChooseRandomly for FractionF64 {
                     .cumulative_probabilities
                     .last()
                     .unwrap()
-                    .extract_approx()
+                    .approx_ref()
                     .unwrap(),
             ),
         );

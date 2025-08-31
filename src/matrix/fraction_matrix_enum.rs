@@ -139,14 +139,14 @@ impl EbiMatrix<FractionEnum> for FractionMatrixEnum {
     fn increase(&mut self, row: usize, column: usize, value: &FractionEnum) {
         match self {
             FractionMatrixEnum::Approx(m) => {
-                if let Ok(f) = value.extract_approx() {
+                if let Ok(f) = value.approx_ref() {
                     m.values[row * m.number_of_columns + column] += f;
                 } else {
                     *self = FractionMatrixEnum::CannotCombineExactAndApprox;
                 }
             }
             FractionMatrixEnum::Exact(m) => {
-                if let Ok(f) = value.extract_exact() {
+                if let Ok(f) = value.exact_ref() {
                     m.values[row * m.number_of_columns + column] += f;
                 } else {
                     *self = FractionMatrixEnum::CannotCombineExactAndApprox;
@@ -159,14 +159,14 @@ impl EbiMatrix<FractionEnum> for FractionMatrixEnum {
     fn decrease(&mut self, row: usize, column: usize, value: &FractionEnum) {
         match self {
             FractionMatrixEnum::Approx(m) => {
-                if let Ok(f) = value.extract_approx() {
+                if let Ok(f) = value.approx_ref() {
                     m.values[row * m.number_of_columns + column] -= f;
                 } else {
                     *self = FractionMatrixEnum::CannotCombineExactAndApprox;
                 }
             }
             FractionMatrixEnum::Exact(m) => {
-                if let Ok(f) = value.extract_exact() {
+                if let Ok(f) = value.exact_ref() {
                     m.values[row * m.number_of_columns + column] -= f;
                 } else {
                     *self = FractionMatrixEnum::CannotCombineExactAndApprox;
