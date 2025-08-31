@@ -1,7 +1,8 @@
 use crate::{
+    One,
+    ebi_matrix::EbiMatrix,
     ebi_number::Zero,
     fraction::{fraction::EPSILON, fraction_f64::FractionF64},
-    ebi_matrix::EbiMatrix,
     pop_front_columns, push_columns,
 };
 use anyhow::{Error, Result, anyhow};
@@ -20,12 +21,12 @@ impl FractionMatrixF64 {
 }
 
 impl EbiMatrix<FractionF64> for FractionMatrixF64 {
-    fn new(number_of_rows: usize, number_of_columns: usize, value: FractionF64) -> Result<Self> {
-        Ok(Self {
+    fn new(number_of_rows: usize, number_of_columns: usize) -> Self {
+        Self {
             number_of_rows,
             number_of_columns,
-            values: vec![value.0; number_of_rows * number_of_columns],
-        })
+            values: vec![0f64; number_of_rows * number_of_columns],
+        }
     }
 
     fn number_of_rows(&self) -> usize {
@@ -45,6 +46,14 @@ impl EbiMatrix<FractionF64> for FractionMatrixF64 {
             self.number_of_columns
         );
         self.number_of_columns += number_of_columns_to_add;
+    }
+
+    fn push_rows(&mut self, number_of_rows_to_add: usize) {
+        self.values.resize(
+            self.values.len() + number_of_rows_to_add * self.number_of_columns,
+            0f64,
+        );
+        self.number_of_rows += number_of_rows_to_add;
     }
 
     fn pop_front_columns(&mut self, number_of_columns_to_remove: usize) {
@@ -82,6 +91,24 @@ impl EbiMatrix<FractionF64> for FractionMatrixF64 {
             .chunks(self.number_of_columns)
             .map(|x| x.into_iter().map(|f| FractionF64(*f)).collect())
             .collect()
+    }
+
+    fn is_one(&self, row: usize, column: usize) -> bool {
+        self.values[row * self.number_of_columns + column].is_one()
+    }
+
+    fn increase(&mut self, row: usize, column: usize, value: &FractionF64) {
+        self.values[row * self.number_of_columns + column] += value.0;
+    }
+
+    fn decrease(&mut self, row: usize, column: usize, value: &FractionF64) {
+        self.values[row * self.number_of_columns + column] -= value.0;
+    }
+
+    fn set_row_zero(&mut self, row: usize) {
+        for column in 0..self.number_of_columns {
+            self.values[row * self.number_of_columns + column] = 0f64;
+        }
     }
 }
 
@@ -159,8 +186,6 @@ impl TryFrom<Vec<Vec<FractionF64>>> for FractionMatrixF64 {
         })
     }
 }
-
-
 
 impl std::fmt::Display for FractionMatrixF64 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

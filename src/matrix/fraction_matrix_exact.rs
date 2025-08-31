@@ -1,12 +1,13 @@
 use anyhow::{Error, Result, anyhow};
 use itertools::Itertools;
 use malachite::{
-    base::num::basic::traits::{One, Zero},
+    base::num::basic::traits::{One as MOne, Zero as MZero},
     rational::Rational,
 };
 
 use crate::{
-    ebi_matrix::EbiMatrix, fraction::fraction_exact::FractionExact, pop_front_columns, push_columns
+    One, Zero, ebi_matrix::EbiMatrix, fraction::fraction_exact::FractionExact, pop_front_columns,
+    push_columns,
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -23,12 +24,12 @@ impl FractionMatrixExact {
 }
 
 impl EbiMatrix<FractionExact> for FractionMatrixExact {
-    fn new(number_of_rows: usize, number_of_columns: usize, value: FractionExact) -> Result<Self> {
-        Ok(Self {
+    fn new(number_of_rows: usize, number_of_columns: usize) -> Self {
+        Self {
             number_of_rows,
             number_of_columns,
-            values: vec![value.0; number_of_rows * number_of_columns],
-        })
+            values: vec![Rational::zero(); number_of_rows * number_of_columns],
+        }
     }
 
     fn number_of_rows(&self) -> usize {
@@ -48,6 +49,14 @@ impl EbiMatrix<FractionExact> for FractionMatrixExact {
             self.number_of_columns
         );
         self.number_of_columns += number_of_columns_to_add;
+    }
+
+    fn push_rows(&mut self, number_of_rows_to_add: usize) {
+        self.values.resize(
+            self.values.len() + number_of_rows_to_add * self.number_of_columns,
+            Rational::zero(),
+        );
+        self.number_of_rows += number_of_rows_to_add;
     }
 
     fn pop_front_columns(&mut self, number_of_columns_to_remove: usize) {
@@ -73,6 +82,10 @@ impl EbiMatrix<FractionExact> for FractionMatrixExact {
         self.values[row * self.number_of_columns + column] = Rational::ZERO;
     }
 
+    fn is_one(&self, row: usize, column: usize) -> bool {
+        self.values[row * self.number_of_columns + column].is_one()
+    }
+
     fn set_one(&mut self, row: usize, column: usize) {
         self.values[row * self.number_of_columns + column] = Rational::ONE;
     }
@@ -84,6 +97,20 @@ impl EbiMatrix<FractionExact> for FractionMatrixExact {
             .into_iter()
             .map(|x| x.into_iter().map(|f| FractionExact(f)).collect())
             .collect()
+    }
+
+    fn increase(&mut self, row: usize, column: usize, value: &FractionExact) {
+        self.values[row * self.number_of_columns + column] += &value.0
+    }
+
+    fn decrease(&mut self, row: usize, column: usize, value: &FractionExact) {
+        self.values[row * self.number_of_columns + column] -= &value.0
+    }
+
+    fn set_row_zero(&mut self, row: usize) {
+        for column in 0..self.number_of_columns {
+            self.values[row * self.number_of_columns + column] = Rational::zero();
+        }
     }
 }
 
