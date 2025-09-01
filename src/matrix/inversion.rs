@@ -60,7 +60,7 @@ macro_rules! invert {
             return Ok($self);
         }
 
-        println!("compute inverse of\n{}", $self);
+        // println!("compute inverse of\n{}", $self);
 
         //extend the rows with the identity matrix
         $self.push_columns($self.number_of_rows);
