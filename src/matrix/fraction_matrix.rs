@@ -47,12 +47,14 @@ macro_rules! pop_front_columns {
 //======================== tests ========================//
 #[cfg(test)]
 mod tests {
+
     use crate::{
+        Inversion,
+        Zero,
         ebi_matrix::EbiMatrix,
-        ebi_number::Zero,
         f, f0,
         fraction::fraction::Fraction,
-        matrix::{fraction_matrix::FractionMatrix}, Inversion,
+        matrix::fraction_matrix::FractionMatrix,
     };
 
     #[test]
@@ -147,5 +149,32 @@ mod tests {
         println!("{}", m2);
 
         assert!(m1.eq(&mut m2));
+    }
+
+    #[test]
+    fn display_empty() {
+        let m = FractionMatrix::new(0, 0);
+        let _ = format!("{}", m);
+
+        let m = FractionMatrix::new(1, 0);
+        let _ = format!("{}", m);
+
+        let m = FractionMatrix::new(0, 1);
+        let _ = format!("{}", m);
+    }
+
+    #[test]
+    fn to_vec_empty() {
+        let m = FractionMatrix::new(0, 0);
+        let u: Vec<Vec<Fraction>> = vec![];
+        assert_eq!(m.to_vec(), u);
+
+        let m = FractionMatrix::new(1, 0);
+        let u: Vec<Vec<Fraction>> = vec![vec![]];
+        assert_eq!(m.to_vec(), u);
+
+        let m = FractionMatrix::new(0, 1);
+        let u: Vec<Vec<Fraction>> = vec![];
+        assert_eq!(m.to_vec(), u);
     }
 }

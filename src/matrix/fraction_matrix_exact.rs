@@ -6,7 +6,8 @@ use malachite::{
 };
 
 use crate::{
-    ebi_matrix::EbiMatrix, fraction::fraction_exact::FractionExact, pop_front_columns, push_columns, One, Signed, Zero
+    One, Signed, Zero, ebi_matrix::EbiMatrix, fraction::fraction_exact::FractionExact,
+    pop_front_columns, push_columns,
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -90,12 +91,16 @@ impl EbiMatrix<FractionExact> for FractionMatrixExact {
     }
 
     fn to_vec(self) -> Vec<Vec<FractionExact>> {
-        self.values
-            .into_iter()
-            .chunks(self.number_of_columns)
-            .into_iter()
-            .map(|x| x.into_iter().map(|f| FractionExact(f)).collect())
-            .collect()
+        if self.number_of_columns > 0 {
+            self.values
+                .into_iter()
+                .chunks(self.number_of_columns)
+                .into_iter()
+                .map(|x| x.into_iter().map(|f| FractionExact(f)).collect())
+                .collect()
+        } else {
+            vec![vec![]; self.number_of_rows]
+        }
     }
 
     fn increase(&mut self, row: usize, column: usize, value: &FractionExact) {
@@ -158,15 +163,21 @@ impl TryFrom<Vec<Vec<FractionExact>>> for FractionMatrixExact {
 impl std::fmt::Display for FractionMatrixExact {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{{{{")?;
-        for (i, row) in self.values.chunks(self.number_of_columns).enumerate() {
-            for (j, fraction) in row.iter().enumerate() {
-                write!(f, "{}", fraction.to_string())?;
-                if j < row.len() - 1 {
-                    write!(f, ", ")?;
+        if self.number_of_columns > 0 {
+            for (i, row) in self.values.chunks(self.number_of_columns).enumerate() {
+                for (j, fraction) in row.iter().enumerate() {
+                    write!(f, "{}", fraction.to_string())?;
+                    if j < row.len() - 1 {
+                        write!(f, ", ")?;
+                    }
+                }
+                if i < self.number_of_rows - 1 {
+                    write!(f, "}},\n {{")?;
                 }
             }
-            if i < self.number_of_rows - 1 {
-                write!(f, "}},\n {{")?;
+        } else {
+            for _ in 0..self.number_of_rows {
+                write!(f, "}},\n{{")?;
             }
         }
         write!(f, "}}}}")

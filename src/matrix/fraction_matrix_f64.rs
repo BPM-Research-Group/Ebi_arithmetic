@@ -87,10 +87,14 @@ impl EbiMatrix<FractionF64> for FractionMatrixF64 {
     }
 
     fn to_vec(self) -> Vec<Vec<FractionF64>> {
-        self.values
-            .chunks(self.number_of_columns)
-            .map(|x| x.into_iter().map(|f| FractionF64(*f)).collect())
-            .collect()
+        if self.number_of_columns > 0 {
+            self.values
+                .chunks(self.number_of_columns)
+                .map(|x| x.into_iter().map(|f| FractionF64(*f)).collect())
+                .collect()
+        } else {
+            vec![vec![]; self.number_of_rows]
+        }
     }
 
     fn is_one(&self, row: usize, column: usize) -> bool {
@@ -198,15 +202,21 @@ impl TryFrom<Vec<Vec<FractionF64>>> for FractionMatrixF64 {
 impl std::fmt::Display for FractionMatrixF64 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{{{{")?;
-        for (i, row) in self.values.chunks(self.number_of_columns).enumerate() {
-            for (j, fraction) in row.iter().enumerate() {
-                write!(f, "{}", fraction.to_string())?;
-                if j < row.len() - 1 {
-                    write!(f, ", ")?;
+        if self.number_of_columns > 0 {
+            for (i, row) in self.values.chunks(self.number_of_columns).enumerate() {
+                for (j, fraction) in row.iter().enumerate() {
+                    write!(f, "{}", fraction.to_string())?;
+                    if j < row.len() - 1 {
+                        write!(f, ", ")?;
+                    }
+                }
+                if i < self.number_of_rows - 1 {
+                    write!(f, "}},\n {{")?;
                 }
             }
-            if i < self.number_of_rows - 1 {
-                write!(f, "}},\n {{")?;
+        } else {
+            for _ in 0..self.number_of_rows {
+                write!(f, "}},\n{{")?;
             }
         }
         write!(f, "}}}}")
