@@ -2,6 +2,7 @@
 pub mod ebi_matrix;
 pub mod ebi_number;
 pub mod exact;
+pub mod exporter;
 pub mod parsing;
 
 pub mod matrix {
@@ -35,6 +36,7 @@ pub mod fraction {
 pub use crate::ebi_matrix::*;
 pub use crate::ebi_number::*;
 pub use crate::exact::*;
+pub use crate::exporter::Exporter;
 pub use crate::fraction::choose_randomly::FractionRandomCache;
 pub use crate::fraction::fraction::Fraction;
 pub use crate::matrix::fraction_matrix::FractionMatrix;
