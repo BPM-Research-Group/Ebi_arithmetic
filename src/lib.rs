@@ -1,10 +1,10 @@
 // pub mod choose_randomly;
+pub mod constant_fraction;
 pub mod ebi_matrix;
 pub mod ebi_number;
 pub mod exact;
 pub mod exporter;
 pub mod parsing;
-
 pub mod matrix {
     pub mod exact;
     pub mod fraction_matrix;
@@ -16,7 +16,6 @@ pub mod matrix {
     pub mod inversion;
     pub mod mul;
 }
-
 pub mod fraction {
     pub mod choose_randomly;
     pub mod exact;
@@ -32,7 +31,7 @@ pub mod fraction {
     pub mod sqrt;
     pub mod zero;
 }
-
+pub use crate::constant_fraction::*;
 pub use crate::ebi_matrix::*;
 pub use crate::ebi_number::*;
 pub use crate::exact::*;
