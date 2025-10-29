@@ -1,7 +1,7 @@
 use crate::Fraction;
 use std::fmt::Display;
 
-#[derive(Eq, Clone, Debug)]
+#[derive(Eq, Clone, Debug, Copy)]
 pub struct ConstFraction(usize, usize);
 
 impl ConstFraction {
