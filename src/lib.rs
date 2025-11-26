@@ -31,6 +31,7 @@ pub mod fraction {
     pub mod signed;
     pub mod sqrt;
     pub mod zero;
+    pub mod approximate;
 }
 
 pub use crate::ebi_matrix::*;

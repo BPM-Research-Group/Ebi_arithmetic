@@ -1,3 +1,8 @@
+use crate::{
+    ebi_number::Zero,
+    exact::is_exact_globally,
+    fraction::{fraction::EPSILON, fraction_exact::FractionExact},
+};
 use anyhow::{Error, anyhow};
 use malachite::{
     base::{num::conversion::traits::RoundingFrom, rounding_modes::RoundingMode::Nearest},
@@ -12,12 +17,6 @@ use std::{
     ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign},
     str::FromStr,
     sync::Arc,
-};
-
-use crate::{
-    ebi_number::Zero,
-    exact::is_exact_globally,
-    fraction::{fraction::EPSILON, fraction_exact::FractionExact},
 };
 
 #[derive(Clone)]
@@ -131,6 +130,7 @@ pub use f1_en;
 
 impl std::fmt::Display for FractionEnum {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        println!("calling display");
         match self {
             FractionEnum::Exact(fr) => std::fmt::Display::fmt(&fr, f),
             FractionEnum::Approx(fr) => std::fmt::Display::fmt(&fr, f),
@@ -143,6 +143,7 @@ impl std::fmt::Display for FractionEnum {
 
 impl std::fmt::Debug for FractionEnum {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        println!("calling debug");
         match self {
             Self::Exact(arg0) => f.debug_tuple("Exact ").field(arg0).finish(),
             Self::Approx(arg0) => f.debug_tuple("Approx ").field(arg0).finish(),
@@ -726,12 +727,11 @@ ttype_signed!(i8);
 
 #[cfg(test)]
 mod tests {
-    use std::ops::Neg;
-
     use crate::{
         ebi_number::{One, Signed},
         fraction::fraction_enum::FractionEnum,
     };
+    use std::ops::Neg;
 
     #[test]
     fn fraction_neg() {
