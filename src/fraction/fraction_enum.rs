@@ -130,7 +130,6 @@ pub use f1_en;
 
 impl std::fmt::Display for FractionEnum {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        println!("calling display");
         match self {
             FractionEnum::Exact(fr) => std::fmt::Display::fmt(&fr, f),
             FractionEnum::Approx(fr) => std::fmt::Display::fmt(&fr, f),
@@ -143,7 +142,6 @@ impl std::fmt::Display for FractionEnum {
 
 impl std::fmt::Debug for FractionEnum {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        println!("calling debug");
         match self {
             Self::Exact(arg0) => f.debug_tuple("Exact ").field(arg0).finish(),
             Self::Approx(arg0) => f.debug_tuple("Approx ").field(arg0).finish(),
