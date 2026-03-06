@@ -12,7 +12,11 @@ use std::{
 
 use anyhow::{Error, anyhow};
 use malachite::{
-    base::{num::conversion::traits::RoundingFrom, rounding_modes::RoundingMode::Nearest},
+    Natural,
+    base::{
+        num::{arithmetic::traits::BinomialCoefficient, conversion::traits::RoundingFrom},
+        rounding_modes::RoundingMode::{self, Nearest},
+    },
     rational::Rational,
 };
 
@@ -20,6 +24,15 @@ use crate::{ebi_number::Zero, fraction::fraction::EPSILON};
 
 #[derive(Debug, Clone, Copy)]
 pub struct FractionF64(pub(crate) f64);
+
+impl FractionF64 {
+    /// Return the binomial coefficient of `n` and `k`, that is, "`n` choose `k`".
+    /// For approximate mode, this may overflow, however only on the output.
+    pub fn binomial_coefficient(n: usize, k: usize) -> Self {
+        let result = Natural::binomial_coefficient(Natural::from(n), Natural::from(k));
+        FractionF64(f64::rounding_from(&result, RoundingMode::Nearest).0)
+    }
+}
 
 impl Default for FractionF64 {
     fn default() -> Self {
