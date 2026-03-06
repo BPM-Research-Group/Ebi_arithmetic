@@ -5,7 +5,11 @@ use crate::{
 };
 use anyhow::{Error, anyhow};
 use malachite::{
-    base::{num::conversion::traits::RoundingFrom, rounding_modes::RoundingMode::Nearest},
+    Natural,
+    base::{
+        num::{arithmetic::traits::BinomialCoefficient, conversion::traits::RoundingFrom},
+        rounding_modes::RoundingMode::{self, Nearest},
+    },
     rational::Rational,
 };
 use std::{
@@ -35,6 +39,17 @@ impl FractionEnum {
             (FractionEnum::Exact(_), FractionEnum::Exact(_)) => true,
             (FractionEnum::Approx(_), FractionEnum::Approx(_)) => true,
             _ => false,
+        }
+    }
+
+    /// Return the binomial coefficient of `n` and `k`, that is, "`n` choose `k`".
+    /// For approximate mode, this may overflow, however only on the output.
+    pub fn binomial_coefficient(n: usize, k: usize) -> Self {
+        let result = Natural::binomial_coefficient(Natural::from(n), Natural::from(k));
+        if is_exact_globally() {
+            FractionEnum::Exact(result.into())
+        } else {
+            FractionEnum::Approx(f64::rounding_from(&result, RoundingMode::Nearest).0)
         }
     }
 }

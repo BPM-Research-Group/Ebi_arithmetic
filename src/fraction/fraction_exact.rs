@@ -1,5 +1,7 @@
 use anyhow::{Error, anyhow};
-use malachite::{Integer, Natural, rational::Rational};
+use malachite::{
+    Integer, Natural, base::num::arithmetic::traits::BinomialCoefficient, rational::Rational,
+};
 use std::{
     borrow::Borrow,
     cmp::Ordering,
@@ -14,6 +16,15 @@ use crate::ebi_number::Zero;
 
 #[derive(Clone)]
 pub struct FractionExact(pub(crate) Rational);
+
+impl FractionExact {
+    /// Return the binomial coefficient of `n` and `k`, that is, "`n` choose `k`".
+    /// For approximate mode, this may overflow, however only on the output.
+    pub fn binomial_coefficient(n: usize, k: usize) -> Self {
+        let result = Natural::binomial_coefficient(Natural::from(n), Natural::from(k));
+        FractionExact(result.into())
+    }
+}
 
 impl Default for FractionExact {
     fn default() -> Self {
