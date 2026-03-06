@@ -41,3 +41,5 @@ pub use crate::fraction::choose_randomly::FractionRandomCache;
 pub use crate::fraction::fraction::Fraction;
 pub use crate::matrix::fraction_matrix::FractionMatrix;
 pub use malachite;
+pub use rand;
+pub use anyhow;
