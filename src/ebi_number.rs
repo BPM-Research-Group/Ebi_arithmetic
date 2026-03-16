@@ -2,6 +2,8 @@ use crate::fraction::{
     fraction_enum::FractionEnum, fraction_exact::FractionExact, fraction_f64::FractionF64,
 };
 use anyhow::Result;
+use malachite::base::random::Seed;
+use rand::RngCore;
 
 pub trait EbiNumber: Zero + One + Round + Clone {}
 
@@ -79,6 +81,19 @@ pub trait Recip: Sized {
 
 pub trait OneMinus: Sized {
     fn one_minus(self) -> Self;
+}
+
+pub trait Random {
+    /// Returns a random number between 0 (exclusive) and 1 (inclusive).
+    /// The `bit-length` is a measure for the complexity of the returned number in exact mode (has no effect in approximate mode).
+    fn random_non_zero_probability(bit_length: u64, seed: Seed) -> Self;
+
+    fn random_seed() -> Seed {
+        let mut rng = rand::rng();
+        let mut buf = [0u8; 32];
+        rng.fill_bytes(&mut buf);
+        Seed::from_bytes(buf)
+    }
 }
 
 pub trait ChooseRandomly {

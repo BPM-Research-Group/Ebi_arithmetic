@@ -17,6 +17,7 @@ pub mod matrix {
     pub mod mul;
 }
 pub mod fraction {
+    pub mod approximate;
     pub mod choose_randomly;
     pub mod exact;
     pub mod fraction;
@@ -25,12 +26,12 @@ pub mod fraction {
     pub mod fraction_f64;
     pub mod one;
     pub mod one_minus;
+    pub mod random;
     pub mod recip;
     pub mod round;
     pub mod signed;
     pub mod sqrt;
     pub mod zero;
-    pub mod approximate;
 }
 pub use crate::constant_fraction::*;
 pub use crate::ebi_matrix::*;
@@ -40,4 +41,6 @@ pub use crate::exporter::Exporter;
 pub use crate::fraction::choose_randomly::FractionRandomCache;
 pub use crate::fraction::fraction::Fraction;
 pub use crate::matrix::fraction_matrix::FractionMatrix;
+pub use anyhow;
 pub use malachite;
+pub use rand;
