@@ -82,13 +82,12 @@ impl FromStr for FractionF64 {
     type Err = Error;
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        if let Ok(float) = f64::from_str(s) {
-            Ok(Self(float))
-        } else {
-            match Rational::from_str(s) {
-                Ok(f) => Ok(Self(f64::rounding_from(f, Nearest).0)),
-                Err(_) => Err(anyhow!("{} is not an approximate fraction", s)),
-            }
+        match Rational::from_str(s) {
+            Ok(f) => Ok(Self(f64::rounding_from(f, Nearest).0)),
+            Err(_) => match f64::from_str(s) {
+                Ok(f) => Ok(Self(f)),
+                Err(_) => Err(anyhow!("{} was not recognised as a fraction", s)),
+            },
         }
     }
 }

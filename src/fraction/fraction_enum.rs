@@ -1,14 +1,14 @@
 use crate::{
     ebi_number::Zero,
     exact::is_exact_globally,
-    fraction::{fraction::EPSILON, fraction_exact::FractionExact},
+    fraction::{fraction::EPSILON, fraction_exact::FractionExact, fraction_f64::FractionF64},
 };
-use anyhow::{Error, anyhow};
+use anyhow::Error;
 use malachite::{
     Natural,
     base::{
         num::{arithmetic::traits::BinomialCoefficient, conversion::traits::RoundingFrom},
-        rounding_modes::RoundingMode::{self, Nearest},
+        rounding_modes::RoundingMode::{self},
     },
     rational::Rational,
 };
@@ -67,16 +67,12 @@ impl FromStr for FractionEnum {
         if is_exact_globally() {
             match FractionExact::from_str(s) {
                 Ok(x) => Ok(FractionEnum::Exact(x.0)),
-                Err(_) => Err(anyhow!("{} is not a fraction", s)),
+                Err(e) => Err(e),
             }
         } else {
-            if let Ok(float) = f64::from_str(s) {
-                Ok(FractionEnum::Approx(float))
-            } else {
-                match Rational::from_str(s) {
-                    Ok(f) => Ok(FractionEnum::Approx(f64::rounding_from(f, Nearest).0)),
-                    Err(_) => Err(anyhow!("{} is not an approximate fraction", s)),
-                }
+            match FractionF64::from_str(s) {
+                Ok(x) => Ok(FractionEnum::Approx(x.0)),
+                Err(e) => Err(e),
             }
         }
     }

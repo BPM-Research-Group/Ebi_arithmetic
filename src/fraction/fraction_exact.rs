@@ -38,64 +38,20 @@ impl FromStr for FractionExact {
     type Err = Error;
 
     fn from_str(s: &str) -> std::prelude::v1::Result<Self, Self::Err> {
-        //integer
-        if let Ok(n) = s.parse::<Integer>() {
-            return Ok(Self(n.into()));
+        //rational
+        if let Ok(rational) = s.parse::<Rational>() {
+            return Ok(Self(rational));
         }
 
         //float
-        {
-            if s.starts_with('-') {
-                //negative
-                let s = &s[1..];
-                let mut arr = s.split('.');
-                if let Some(mut int) = arr.next() {
-                    if int.len() == 0 {
-                        int = &"0";
-                    }
-                    if let Some(dec) = arr.next() {
-                        let digits = dec.len() as u32;
-                        match (int.parse::<Natural>(), dec.parse::<Natural>()) {
-                            (Ok(num), Ok(den)) => {
-                                return Ok(-Self(
-                                    Rational::from(num)
-                                        + Rational::from(den) / Rational::from(10_u64.pow(digits)),
-                                ));
-                            }
-                            _ => {}
-                        }
-                    }
-                }
-            } else {
-                //positive
-                let mut arr = s.split('.');
-                if let Some(mut int) = arr.next() {
-                    if int.len() == 0 {
-                        int = &"0";
-                    }
-                    if let Some(dec) = arr.next() {
-                        let digits = dec.len() as u32;
-                        match (int.parse::<Natural>(), dec.parse::<Natural>()) {
-                            (Ok(num), Ok(den)) => {
-                                return Ok(Self(
-                                    Rational::from(num)
-                                        + Rational::from(den) / Rational::from(10_u64.pow(digits)),
-                                ));
-                            }
-                            _ => {}
-                        }
-                    }
-                }
+        if let Ok(f) = s.parse::<f64>() {
+            match Rational::try_from_float_simplest(f) {
+                Ok(rational) => Ok(Self(rational)),
+                Err(_) => Err(anyhow!("{} was not recognised as a fraction.", s)),
             }
+        } else {
+            Err(anyhow!("{} was not recognised as a fraction.", s))
         }
-
-        //fraction
-        Ok(Self(match Rational::from_str(s) {
-            Ok(x) => x,
-            Err(_) => {
-                return Err(anyhow!("parsing fraction failed"));
-            }
-        }))
     }
 }
 
