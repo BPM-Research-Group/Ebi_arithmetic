@@ -51,6 +51,7 @@ pub mod exact;
 pub mod exporter;
 pub mod log;
 pub mod parsing;
+
 pub use crate::constant_fraction::*;
 pub use crate::ebi_matrix::*;
 pub use crate::ebi_number::*;
@@ -58,7 +59,7 @@ pub use crate::exact::*;
 pub use crate::exporter::Exporter;
 pub use crate::fraction::choose_randomly::FractionRandomCache;
 pub use crate::fraction::fraction::Fraction;
-pub use crate::log::LogOf;
+pub use crate::log::Log;
 pub use crate::matrix::fraction_matrix::FractionMatrix;
 pub use anyhow;
 pub use malachite;

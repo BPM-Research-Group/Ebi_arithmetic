@@ -1,8 +1,18 @@
 use crate::fraction::fraction_f64::FractionF64;
-use std::fmt::{Debug, Display};
+use anyhow::Result;
+use std::{
+    fmt::{Debug, Display},
+    io::Write,
+};
 
 #[derive(Clone)]
 pub struct LogPolynomialF64(pub(crate) f64);
+
+impl LogPolynomialF64 {
+    pub fn export(&self, f: &mut dyn Write) -> Result<()> {
+        Ok(writeln!(f, "Approximately {}", self.0)?)
+    }
+}
 
 impl Display for LogPolynomialF64 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

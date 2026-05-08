@@ -1,8 +1,9 @@
 use crate::{
-    LogOf, Signed, Zero,
+    Signed, Zero,
     fraction::{
         fraction_enum::FractionEnum, fraction_exact::FractionExact, fraction_f64::FractionF64,
     },
+    log::LogOf,
     log_polynomial::{
         log_polynomial_enum::LogPolynomialEnum, log_polynomial_exact::LogPolynomialExact,
         log_polynomial_f64::LogPolynomialF64,
@@ -238,13 +239,10 @@ impl LogOf<&FractionEnum> for LogPolynomialEnum {
 
 #[cfg(test)]
 mod tests {
-    use malachite::Natural;
-
     use crate::{
-        LogOf,
-        fraction::{approximate::Approximate, fraction_exact::FractionExact},
-        log_polynomial::log_polynomial_exact::LogPolynomialExact,
+        fraction::{approximate::Approximate, fraction_exact::FractionExact}, log::LogOf, log_polynomial::log_polynomial_exact::LogPolynomialExact
     };
+    use malachite::Natural;
 
     #[test]
     fn log() {

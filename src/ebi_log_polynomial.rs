@@ -1,13 +1,11 @@
 use crate::{
-    LogOf, MaybeExact, One, Zero,
-    fraction::{
+    MaybeExact, One, Zero, fraction::{
         approximate::Approximate, fraction_enum::FractionEnum, fraction_exact::FractionExact,
         fraction_f64::FractionF64,
-    },
-    log_polynomial::{
+    }, log::LogOf, log_polynomial::{
         log_polynomial_enum::LogPolynomialEnum, log_polynomial_exact::LogPolynomialExact,
         log_polynomial_f64::LogPolynomialF64,
-    },
+    }
 };
 use std::{
     fmt::{Debug, Display},

@@ -4,7 +4,11 @@ use crate::{
         log_polynomial_exact::LogPolynomialExact, log_polynomial_f64::LogPolynomialF64,
     },
 };
-use std::fmt::{Debug, Display};
+use anyhow::{Result, anyhow};
+use std::{
+    fmt::{Debug, Display},
+    io::Write,
+};
 
 #[derive(Clone, Eq, PartialEq)]
 pub enum LogPolynomialEnum {
@@ -14,6 +18,16 @@ pub enum LogPolynomialEnum {
 }
 
 impl LogPolynomialEnum {
+    pub fn export(&self, f: &mut dyn Write) -> Result<()> {
+        match self {
+            LogPolynomialEnum::Approx(lp) => lp.export(f),
+            LogPolynomialEnum::Exact(lp) => lp.export(f),
+            LogPolynomialEnum::CannotCombineExactAndApprox => {
+                Err(anyhow!("Cannot combine exact and approximate arithmetic."))
+            }
+        }
+    }
+
     /**
      * Returns whether the two given objects are either both exact or both approximate
      */
