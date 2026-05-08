@@ -1,8 +1,11 @@
 use crate::{
-    Zero, fraction::fraction_exact::FractionExact,
-    log_polynomial::log_polynomial_exact::LogPolynomialExact,
+    Zero,
+    fraction::{fraction_enum::FractionEnum, fraction_exact::FractionExact, fraction_f64::FractionF64},
+    log_polynomial::{
+        log_polynomial_enum::LogPolynomialEnum, log_polynomial_exact::LogPolynomialExact, log_polynomial_f64::LogPolynomialF64
+    },
 };
-use malachite::{Natural, base::num::basic::traits::Two};
+use malachite::{Natural, Rational, base::num::basic::traits::Two};
 use std::{collections::hash_map::Entry, ops::AddAssign};
 
 impl AddAssign for LogPolynomialExact {
@@ -77,9 +80,117 @@ impl AddAssign<&FractionExact> for LogPolynomialExact {
     }
 }
 
+impl AddAssign<Rational> for LogPolynomialExact {
+    fn add_assign(&mut self, rhs: Rational) {
+        if !rhs.is_zero() {
+            match self.argument2coefficient.entry(Natural::TWO) {
+                Entry::Occupied(mut occupied_entry) => {
+                    *occupied_entry.get_mut() += rhs;
+                    if occupied_entry.get().is_zero() {
+                        occupied_entry.remove_entry();
+                    }
+                }
+                Entry::Vacant(vacant_entry) => {
+                    vacant_entry.insert(rhs);
+                }
+            };
+        }
+    }
+}
+
+impl AddAssign<&Rational> for LogPolynomialExact {
+    fn add_assign(&mut self, rhs: &Rational) {
+        if !rhs.is_zero() {
+            match self.argument2coefficient.entry(Natural::TWO) {
+                Entry::Occupied(mut occupied_entry) => {
+                    *occupied_entry.get_mut() += rhs;
+                    if occupied_entry.get().is_zero() {
+                        occupied_entry.remove_entry();
+                    }
+                }
+                Entry::Vacant(vacant_entry) => {
+                    vacant_entry.insert(rhs.clone());
+                }
+            };
+        }
+    }
+}
+
+impl AddAssign for LogPolynomialF64 {
+    fn add_assign(&mut self, rhs: Self) {
+        self.0 += rhs.0
+    }
+}
+
+impl AddAssign<FractionF64> for LogPolynomialF64 {
+    fn add_assign(&mut self, rhs: FractionF64) {
+        self.0 += rhs.0
+    }
+}
+
+impl AddAssign<&FractionF64> for LogPolynomialF64 {
+    fn add_assign(&mut self, rhs: &FractionF64) {
+        self.0 += rhs.0
+    }
+}
+
+impl AddAssign<f64> for LogPolynomialF64 {
+    fn add_assign(&mut self, rhs: f64) {
+        self.0 += rhs
+    }
+}
+
+impl AddAssign<&f64> for LogPolynomialF64 {
+    fn add_assign(&mut self, rhs: &f64) {
+        self.0 += rhs
+    }
+}
+
+impl AddAssign for LogPolynomialEnum {
+    fn add_assign(&mut self, rhs: Self) {
+        if self.matches(&rhs) {
+            match (self, rhs) {
+                (LogPolynomialEnum::Approx(lp), LogPolynomialEnum::Approx(f)) => lp.add_assign(f),
+                (LogPolynomialEnum::Exact(lp), LogPolynomialEnum::Exact(f)) => lp.add_assign(f),
+                _ => {}
+            }
+        } else {
+            *self = LogPolynomialEnum::CannotCombineExactAndApprox
+        }
+    }
+}
+
+impl AddAssign<FractionEnum> for LogPolynomialEnum {
+    fn add_assign(&mut self, rhs: FractionEnum) {
+        if self.matches_fraction(&rhs) {
+            match (self, rhs) {
+                (LogPolynomialEnum::Approx(lp), FractionEnum::Approx(f)) => lp.add_assign(f),
+                (LogPolynomialEnum::Exact(lp), FractionEnum::Exact(f)) => lp.add_assign(f),
+                _ => {}
+            }
+        } else {
+            *self = LogPolynomialEnum::CannotCombineExactAndApprox
+        }
+    }
+}
+
+impl AddAssign<&FractionEnum> for LogPolynomialEnum {
+    fn add_assign(&mut self, rhs: &FractionEnum) {
+        if self.matches_fraction(&rhs) {
+            match (self, rhs) {
+                (LogPolynomialEnum::Approx(lp), FractionEnum::Approx(f)) => lp.add_assign(f),
+                (LogPolynomialEnum::Exact(lp), FractionEnum::Exact(f)) => lp.add_assign(f),
+                _ => {}
+            }
+        } else {
+            *self = LogPolynomialEnum::CannotCombineExactAndApprox
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::log_polynomial::log_polynomial_exact::LogPolynomialExact;
+    use crate::{One, Zero, log_polynomial::log_polynomial_exact::LogPolynomialExact};
 
     #[test]
     fn add() {

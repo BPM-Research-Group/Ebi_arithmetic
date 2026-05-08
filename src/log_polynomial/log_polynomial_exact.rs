@@ -1,7 +1,6 @@
 use fnv::FnvBuildHasher;
 use malachite::{
     Natural, Rational,
-    base::num::basic::traits::{One, Two},
 };
 use std::{
     collections::{HashMap, hash_map::Entry},
@@ -10,26 +9,14 @@ use std::{
 
 #[derive(Debug, Eq, PartialEq, Clone)]
 /// A log polynomial is a sum of coefficient * log_2(argument) (R * log(N)) terms.
-/// In the background, each term's N is prime (which makes the representation unique).
+///
+/// Internal invariant: no coefficient is zero.
+/// Internal invariant: each argument is prime (which makes the representation unique).
 pub struct LogPolynomialExact {
     pub(crate) argument2coefficient: HashMap<Natural, Rational, FnvBuildHasher>,
 }
 
 impl LogPolynomialExact {
-    pub fn zero() -> Self {
-        Self {
-            argument2coefficient: HashMap::<_, _, FnvBuildHasher>::default(),
-        }
-    }
-
-    pub fn one() -> Self {
-        let mut argument2coefficient = HashMap::<_, _, FnvBuildHasher>::default();
-        argument2coefficient.insert(Natural::TWO, Rational::ONE);
-        Self {
-            argument2coefficient,
-        }
-    }
-
     /// Constructs a new LogPolynomial with representing coefficient * log_2(argument).
     /// The caller must ensure that argument is prime.
     pub fn add_raw(&mut self, coefficient: Rational, argument: Natural) {
