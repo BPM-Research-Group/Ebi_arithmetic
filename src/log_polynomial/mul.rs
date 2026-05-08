@@ -111,3 +111,40 @@ impl MulAssign<&FractionEnum> for LogPolynomialEnum {
         }
     }
 }
+
+macro_rules! mulassign_primitive {
+    ($t:ty) => {
+        impl MulAssign<$t> for LogPolynomialExact {
+            fn mul_assign(&mut self, rhs: $t) {
+                self.mul_assign(Rational::from(rhs))
+            }
+        }
+
+        impl MulAssign<$t> for LogPolynomialF64 {
+            fn mul_assign(&mut self, rhs: $t) {
+                self.mul_assign(rhs as f64)
+            }
+        }
+
+        impl MulAssign<$t> for LogPolynomialEnum {
+            fn mul_assign(&mut self, rhs: $t) {
+                match self {
+                    LogPolynomialEnum::Exact(lp) => lp.mul_assign(rhs),
+                    LogPolynomialEnum::Approx(lp) => lp.mul_assign(rhs),
+                    LogPolynomialEnum::CannotCombineExactAndApprox => {}
+                }
+            }
+        }
+    };
+}
+mulassign_primitive!(usize);
+mulassign_primitive!(u128);
+mulassign_primitive!(u64);
+mulassign_primitive!(u32);
+mulassign_primitive!(u16);
+mulassign_primitive!(u8);
+mulassign_primitive!(i128);
+mulassign_primitive!(i64);
+mulassign_primitive!(i32);
+mulassign_primitive!(i16);
+mulassign_primitive!(i8);

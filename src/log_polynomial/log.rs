@@ -1,5 +1,5 @@
 use crate::{
-    LogOf, Zero,
+    LogOf, Signed, Zero,
     fraction::{
         fraction_enum::FractionEnum, fraction_exact::FractionExact, fraction_f64::FractionF64,
     },
@@ -12,84 +12,100 @@ use anyhow::{Result, anyhow};
 use malachite::{Natural, Rational, base::num::basic::traits::One};
 use prime_factorization::Factorization;
 
-impl LogOf<Natural> for LogPolynomialExact {
-    fn log_of(argument: &Natural) -> Result<LogPolynomialExact>
+// ===== exact =====
+
+impl LogOf<u128> for LogPolynomialExact {
+    fn log_of(argument: u128) -> Result<LogPolynomialExact>
     where
         Self: Sized,
     {
-        if argument.is_zero() {
-            return Err(anyhow!("Cannot take a logarithm of 0."));
+        if argument.is_not_positive() {
+            return Err(anyhow!("Can only take a logarithm of a positive number."));
         }
-
-        //Prime factorisation library does not support larger numbers than u128.
-        //For now, give an error.
-        let arg = match u128::try_from(argument) {
-            Ok(arg) => arg,
-            Err(_) => {
-                return Err(anyhow!(
-                    "Number {argument} is too large to take logarithm of."
-                ));
-            }
-        };
 
         let mut result = LogPolynomialExact::zero();
 
         //perform the prime factorisation
-        for argument in Factorization::run(arg).factors {
-            result.add_raw(Rational::ONE, argument.into());
+        for factor in Factorization::run(argument).factors {
+            result.add_raw(Rational::ONE, factor.into());
         }
 
         Ok(result)
     }
 
-    fn n_log_n_of(argument: &Natural) -> Result<LogPolynomialExact>
+    fn n_log_n_of(argument: u128) -> Result<LogPolynomialExact>
     where
         Self: Sized,
     {
-        if argument.is_zero() {
-            return Err(anyhow!("Cannot take a logarithm of 0."));
+        if argument.is_not_positive() {
+            return Err(anyhow!("Can only take a logarithm of a positive number."));
         }
 
         let coefficient: Rational = argument.clone().into();
 
-        //Prime factorisation library does not support larger numbers than u128.
-        //For now, give an error.
-        let arg = match u128::try_from(argument) {
-            Ok(arg) => arg,
-            Err(_) => {
-                return Err(anyhow!(
-                    "Number {argument} is too large to take logarithm of."
-                ));
-            }
-        };
-
         let mut result = LogPolynomialExact::zero();
 
         //perform the prime factorisation
-        for argument in Factorization::run(arg).factors {
-            result.add_raw(coefficient.clone(), argument.into());
+        for factor in Factorization::run(argument).factors {
+            result.add_raw(coefficient.clone(), factor.into());
         }
 
         Ok(result)
     }
 }
 
-impl LogOf<FractionExact> for LogPolynomialExact {
-    fn log_of(argument: &FractionExact) -> Result<LogPolynomialExact>
+impl LogOf<&Natural> for LogPolynomialExact {
+    fn log_of(argument: &Natural) -> Result<LogPolynomialExact>
     where
         Self: Sized,
     {
-        let (x, y) = argument.0.numerator_and_denominator_ref();
+        //Prime factorisation library does not support larger numbers than u128.
+        //For now, give an error.
+        match u128::try_from(argument) {
+            Ok(arg) => LogPolynomialExact::log_of(arg),
+            Err(_) => Err(anyhow!(
+                "Number {argument} is too large to take logarithm of."
+            )),
+        }
+    }
+
+    fn n_log_n_of(argument: &Natural) -> Result<LogPolynomialExact>
+    where
+        Self: Sized,
+    {
+        //Prime factorisation library does not support larger numbers than u128.
+        //For now, give an error.
+        match u128::try_from(argument) {
+            Ok(arg) => LogPolynomialExact::n_log_n_of(arg),
+            Err(_) => Err(anyhow!(
+                "Number {argument} is too large to take logarithm of."
+            )),
+        }
+    }
+}
+
+impl LogOf<&Rational> for LogPolynomialExact {
+    fn log_of(argument: &Rational) -> Result<LogPolynomialExact>
+    where
+        Self: Sized,
+    {
+        if argument.is_not_positive() {
+            return Err(anyhow!("Can only take a logarithm of a positive number."));
+        }
+        let (x, y) = argument.numerator_and_denominator_ref();
         let mut result = LogPolynomialExact::log_of(x)?;
         result -= LogPolynomialExact::log_of(y)?;
         Ok(result)
     }
 
-    fn n_log_n_of(argument: &FractionExact) -> Result<LogPolynomialExact>
+    fn n_log_n_of(argument: &Rational) -> Result<LogPolynomialExact>
     where
         Self: Sized,
     {
-        let (x, y) = argument.0.numerator_and_denominator_ref();
+        if argument.is_not_positive() {
+            return Err(anyhow!("Can only take a logarithm of a positive number."));
+        }
+        let (x, y) = argument.numerator_and_denominator_ref();
         let mut result = LogPolynomialExact::log_of(x)?;
         result -= LogPolynomialExact::log_of(y)?;
         result *= argument;
@@ -98,30 +114,108 @@ impl LogOf<FractionExact> for LogPolynomialExact {
     }
 }
 
-impl LogOf<FractionF64> for LogPolynomialF64 {
-    fn log_of(argument: &FractionF64) -> Result<Self>
-    where
-        Self: Sized,
-    {
-        Ok(Self(argument.0.log2()))
+impl LogOf<FractionExact> for LogPolynomialExact {
+    fn log_of(argument: FractionExact) -> Result<LogPolynomialExact> {
+        LogPolynomialExact::log_of(&argument.0)
     }
 
-    fn n_log_n_of(argument: &FractionF64) -> Result<Self>
-    where
-        Self: Sized,
-    {
-        Ok(Self(argument.0 * argument.0.log2()))
+    fn n_log_n_of(argument: FractionExact) -> Result<LogPolynomialExact> {
+        LogPolynomialExact::n_log_n_of(&argument.0)
     }
 }
 
+impl LogOf<&FractionExact> for LogPolynomialExact {
+    fn log_of(argument: &FractionExact) -> Result<LogPolynomialExact> {
+        LogPolynomialExact::log_of(&argument.0)
+    }
+
+    fn n_log_n_of(argument: &FractionExact) -> Result<LogPolynomialExact> {
+        LogPolynomialExact::n_log_n_of(&argument.0)
+    }
+}
+
+// ===== approximate =====
+
+impl LogOf<f64> for LogPolynomialF64 {
+    fn log_of(argument: f64) -> Result<Self>
+    where
+        Self: Sized,
+    {
+        if Signed::is_not_positive(&argument) {
+            return Err(anyhow!("Can only take a logarithm of a positive number."));
+        }
+        Ok(Self(argument.log2()))
+    }
+
+    fn n_log_n_of(argument: f64) -> Result<Self>
+    where
+        Self: Sized,
+    {
+        if argument.is_not_positive() {
+            return Err(anyhow!("Can only take a logarithm of a positive number."));
+        }
+        Ok(Self(argument * argument.log2()))
+    }
+}
+
+impl LogOf<FractionF64> for LogPolynomialF64 {
+    fn log_of(argument: FractionF64) -> Result<Self> {
+        LogPolynomialF64::log_of(argument.0)
+    }
+
+    fn n_log_n_of(argument: FractionF64) -> Result<Self> {
+        LogPolynomialF64::n_log_n_of(argument.0)
+    }
+}
+
+impl LogOf<&FractionF64> for LogPolynomialF64 {
+    fn log_of(argument: &FractionF64) -> Result<Self> {
+        LogPolynomialF64::log_of(argument.0)
+    }
+
+    fn n_log_n_of(argument: &FractionF64) -> Result<Self> {
+        LogPolynomialF64::n_log_n_of(argument.0)
+    }
+}
+
+// ===== enum =====
+
 impl LogOf<FractionEnum> for LogPolynomialEnum {
+    fn log_of(argument: FractionEnum) -> Result<Self>
+    where
+        Self: Sized,
+    {
+        match argument {
+            FractionEnum::Exact(f) => Ok(Self::Exact(LogPolynomialExact::log_of(&f)?)),
+            FractionEnum::Approx(f) => Ok(Self::Approx(LogPolynomialF64::log_of(f)?)),
+            FractionEnum::CannotCombineExactAndApprox => {
+                Err(anyhow!("Cannot combine exact and approximate arithmetic."))
+            }
+        }
+    }
+
+    fn n_log_n_of(argument: FractionEnum) -> Result<Self>
+    where
+        Self: Sized,
+    {
+        match argument {
+            FractionEnum::Exact(f) => Ok(Self::Exact(LogPolynomialExact::n_log_n_of(&f)?)),
+            FractionEnum::Approx(f) => Ok(Self::Approx(LogPolynomialF64::n_log_n_of(f)?)),
+            FractionEnum::CannotCombineExactAndApprox => {
+                Err(anyhow!("Cannot combine exact and approximate arithmetic."))
+            }
+        }
+    }
+}
+
+impl LogOf<&FractionEnum> for LogPolynomialEnum {
     fn log_of(argument: &FractionEnum) -> Result<Self>
     where
         Self: Sized,
     {
         match argument {
-            FractionEnum::Exact(f) => LogPolynomialExact::log_of(f),
-            FractionEnum::Approx(f) => Ok(LogPolynomialEnum::Approx(LogPolynomialF64::from(f))),
+            FractionEnum::Exact(f) => Ok(Self::Exact(LogPolynomialExact::log_of(f)?)),
+            FractionEnum::Approx(f) => Ok(Self::Approx(LogPolynomialF64::log_of(*f)?)),
             FractionEnum::CannotCombineExactAndApprox => {
                 Err(anyhow!("Cannot combine exact and approximate arithmetic."))
             }
@@ -132,7 +226,13 @@ impl LogOf<FractionEnum> for LogPolynomialEnum {
     where
         Self: Sized,
     {
-        todo!()
+        match argument {
+            FractionEnum::Exact(f) => Ok(Self::Exact(LogPolynomialExact::n_log_n_of(f)?)),
+            FractionEnum::Approx(f) => Ok(Self::Approx(LogPolynomialF64::n_log_n_of(*f)?)),
+            FractionEnum::CannotCombineExactAndApprox => {
+                Err(anyhow!("Cannot combine exact and approximate arithmetic."))
+            }
+        }
     }
 }
 

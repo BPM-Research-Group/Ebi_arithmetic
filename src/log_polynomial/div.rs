@@ -94,3 +94,40 @@ impl DivAssign<&FractionEnum> for LogPolynomialEnum {
         }
     }
 }
+
+macro_rules! divassign_primitive {
+    ($t:ty) => {
+        impl DivAssign<$t> for LogPolynomialExact {
+            fn div_assign(&mut self, rhs: $t) {
+                self.div_assign(Rational::from(rhs))
+            }
+        }
+
+        impl DivAssign<$t> for LogPolynomialF64 {
+            fn div_assign(&mut self, rhs: $t) {
+                self.div_assign(rhs as f64)
+            }
+        }
+
+        impl DivAssign<$t> for LogPolynomialEnum {
+            fn div_assign(&mut self, rhs: $t) {
+                match self {
+                    LogPolynomialEnum::Exact(lp) => lp.div_assign(rhs),
+                    LogPolynomialEnum::Approx(lp) => lp.div_assign(rhs),
+                    LogPolynomialEnum::CannotCombineExactAndApprox => {}
+                }
+            }
+        }
+    };
+}
+divassign_primitive!(usize);
+divassign_primitive!(u128);
+divassign_primitive!(u64);
+divassign_primitive!(u32);
+divassign_primitive!(u16);
+divassign_primitive!(u8);
+divassign_primitive!(i128);
+divassign_primitive!(i64);
+divassign_primitive!(i32);
+divassign_primitive!(i16);
+divassign_primitive!(i8);

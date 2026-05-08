@@ -27,6 +27,7 @@ pub mod log_polynomial {
     pub mod log_polynomial_exact;
     pub mod log_polynomial_f64;
     pub mod mul;
+    pub mod neg;
     pub mod one;
     pub mod sub;
     pub mod zero;

@@ -47,3 +47,16 @@ impl Zero for LogPolynomialEnum {
         }
     }
 }
+
+#[cfg(test)]
+pub mod tests {
+    use crate::{Zero, log_polynomial::log_polynomial::LogPolynomial};
+
+    #[test]
+    fn zero() {
+        assert!(LogPolynomial::zero().is_zero());
+        assert_eq!(LogPolynomial::zero(), LogPolynomial::zero());
+        assert_eq!(LogPolynomial::from(0), LogPolynomial::zero());
+        assert_ne!(LogPolynomial::from(1000), LogPolynomial::zero());
+    }
+}

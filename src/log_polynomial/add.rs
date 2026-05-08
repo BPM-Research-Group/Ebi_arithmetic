@@ -1,8 +1,11 @@
 use crate::{
     Zero,
-    fraction::{fraction_enum::FractionEnum, fraction_exact::FractionExact, fraction_f64::FractionF64},
+    fraction::{
+        fraction_enum::FractionEnum, fraction_exact::FractionExact, fraction_f64::FractionF64,
+    },
     log_polynomial::{
-        log_polynomial_enum::LogPolynomialEnum, log_polynomial_exact::LogPolynomialExact, log_polynomial_f64::LogPolynomialF64
+        log_polynomial_enum::LogPolynomialEnum, log_polynomial_exact::LogPolynomialExact,
+        log_polynomial_f64::LogPolynomialF64,
     },
 };
 use malachite::{Natural, Rational, base::num::basic::traits::Two};
@@ -122,6 +125,12 @@ impl AddAssign for LogPolynomialF64 {
     }
 }
 
+impl AddAssign<&LogPolynomialF64> for LogPolynomialF64 {
+    fn add_assign(&mut self, rhs: &Self) {
+        self.0 += rhs.0
+    }
+}
+
 impl AddAssign<FractionF64> for LogPolynomialF64 {
     fn add_assign(&mut self, rhs: FractionF64) {
         self.0 += rhs.0
@@ -148,6 +157,20 @@ impl AddAssign<&f64> for LogPolynomialF64 {
 
 impl AddAssign for LogPolynomialEnum {
     fn add_assign(&mut self, rhs: Self) {
+        if self.matches(&rhs) {
+            match (self, rhs) {
+                (LogPolynomialEnum::Approx(lp), LogPolynomialEnum::Approx(f)) => lp.add_assign(f),
+                (LogPolynomialEnum::Exact(lp), LogPolynomialEnum::Exact(f)) => lp.add_assign(f),
+                _ => {}
+            }
+        } else {
+            *self = LogPolynomialEnum::CannotCombineExactAndApprox
+        }
+    }
+}
+
+impl AddAssign<&LogPolynomialEnum> for LogPolynomialEnum {
+    fn add_assign(&mut self, rhs: &Self) {
         if self.matches(&rhs) {
             match (self, rhs) {
                 (LogPolynomialEnum::Approx(lp), LogPolynomialEnum::Approx(f)) => lp.add_assign(f),
@@ -188,15 +211,52 @@ impl AddAssign<&FractionEnum> for LogPolynomialEnum {
     }
 }
 
+macro_rules! addassign_primitive {
+    ($t:ty) => {
+        impl AddAssign<$t> for LogPolynomialExact {
+            fn add_assign(&mut self, rhs: $t) {
+                self.add_assign(Rational::from(rhs))
+            }
+        }
+
+        impl AddAssign<$t> for LogPolynomialF64 {
+            fn add_assign(&mut self, rhs: $t) {
+                self.add_assign(rhs as f64)
+            }
+        }
+
+        impl AddAssign<$t> for LogPolynomialEnum {
+            fn add_assign(&mut self, rhs: $t) {
+                match self {
+                    LogPolynomialEnum::Exact(lp) => lp.add_assign(rhs),
+                    LogPolynomialEnum::Approx(lp) => lp.add_assign(rhs),
+                    LogPolynomialEnum::CannotCombineExactAndApprox => {}
+                }
+            }
+        }
+    };
+}
+addassign_primitive!(usize);
+addassign_primitive!(u128);
+addassign_primitive!(u64);
+addassign_primitive!(u32);
+addassign_primitive!(u16);
+addassign_primitive!(u8);
+addassign_primitive!(i128);
+addassign_primitive!(i64);
+addassign_primitive!(i32);
+addassign_primitive!(i16);
+addassign_primitive!(i8);
+
 #[cfg(test)]
 mod tests {
-    use crate::{One, Zero, log_polynomial::log_polynomial_exact::LogPolynomialExact};
+    use crate::{One, Zero, log_polynomial::log_polynomial::LogPolynomial};
 
     #[test]
     fn add() {
-        let mut a = LogPolynomialExact::zero();
-        let mut b = LogPolynomialExact::one();
-        let c = LogPolynomialExact::from(2);
+        let mut a = LogPolynomial::zero();
+        let mut b = LogPolynomial::one();
+        let c = LogPolynomial::from(2);
 
         a += &b;
         assert_eq!(a, b);

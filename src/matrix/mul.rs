@@ -36,8 +36,9 @@ macro_rules! mul_mat_mat {
 
                 iproduct!(0..result_rows, 0..result_columns).for_each(|(row, column)| {
                     for k in 0..self.number_of_columns() {
-                        result[row * result_columns + column] +=
-                            &self.values[row * self.number_of_columns() + k] * &rhs.values[k * rhs.number_of_columns() + column];
+                        result[row * result_columns + column] += &self.values
+                            [row * self.number_of_columns() + k]
+                            * &rhs.values[k * rhs.number_of_columns() + column];
                     }
                 });
 
@@ -228,18 +229,7 @@ impl Mul<&FractionMatrixEnum> for &Vec<FractionEnum> {
 #[cfg(test)]
 mod tests {
 
-    use crate::{
-        EbiMatrix, MaybeExact,
-        fraction::{fraction::Fraction, fraction_enum::FractionEnum},
-        matrix::fraction_matrix_enum::FractionMatrixEnum,
-        set_exact_globally,
-    };
-    use std::time::Instant;
-
-    use anyhow::Result;
-    use rand::Rng;
-    use serial_test::serial;
-
+    use crate::{EbiMatrix, MaybeExact, fraction::fraction::Fraction};
     use crate::{
         f,
         fraction::{fraction_exact::FractionExact, fraction_f64::FractionF64},
@@ -248,6 +238,10 @@ mod tests {
             fraction_matrix_f64::FractionMatrixF64,
         },
     };
+    use anyhow::Result;
+    use rand::Rng;
+    use serial_test::serial;
+    use std::time::Instant;
 
     #[test]
     fn fraction_matrix_mul() {
@@ -472,72 +466,16 @@ mod tests {
     }
 
     #[test]
-    fn matrix_vector_multiplication_enum_exact() {
-        let m: FractionMatrixEnum = vec![
-            vec![6.into(), 2.into(), 4.into()],
-            vec![(-1).into(), 4.into(), 3.into()],
-            vec![(-2).into(), 9.into(), 3.into()],
-        ]
-        .try_into()
-        .unwrap();
-        let v: Vec<FractionEnum> = vec![4.into(), (-2).into(), 1.into()];
-
-        let x = (&m * &v).unwrap();
-
-        let t = vec![24.into(), (-9).into(), (-23).into()];
-
-        assert_eq!(x, t);
-    }
-
-    #[test]
     #[serial]
-    fn matrix_vector_multiplication_enum_approx() {
-        set_exact_globally(false);
-        let m: FractionMatrixEnum = vec![
+    fn matrix_vector_multiplication() {
+        let m: FractionMatrix = vec![
             vec![6.into(), 2.into(), 4.into()],
             vec![(-1).into(), 4.into(), 3.into()],
             vec![(-2).into(), 9.into(), 3.into()],
         ]
         .try_into()
         .unwrap();
-        let v: Vec<FractionEnum> = vec![4.into(), (-2).into(), 1.into()];
-
-        let x = (&m * &v).unwrap();
-
-        let t = vec![24.into(), (-9).into(), (-23).into()];
-        set_exact_globally(true);
-
-        assert_eq!(x, t);
-    }
-
-    #[test]
-    fn matrix_vector_multiplication_approx() {
-        let m: FractionMatrixF64 = vec![
-            vec![6.into(), 2.into(), 4.into()],
-            vec![(-1).into(), 4.into(), 3.into()],
-            vec![(-2).into(), 9.into(), 3.into()],
-        ]
-        .try_into()
-        .unwrap();
-        let v: Vec<FractionF64> = vec![4.into(), (-2).into(), 1.into()];
-
-        let x = (&m * &v).unwrap();
-
-        let t = vec![24.into(), (-9).into(), (-23).into()];
-
-        assert_eq!(x, t);
-    }
-
-    #[test]
-    fn matrix_vector_multiplication_exact() {
-        let m: FractionMatrixExact = vec![
-            vec![6.into(), 2.into(), 4.into()],
-            vec![(-1).into(), 4.into(), 3.into()],
-            vec![(-2).into(), 9.into(), 3.into()],
-        ]
-        .try_into()
-        .unwrap();
-        let v: Vec<FractionExact> = vec![4.into(), (-2).into(), 1.into()];
+        let v: Vec<Fraction> = vec![4.into(), (-2).into(), 1.into()];
 
         let x = (&m * &v).unwrap();
 
@@ -549,40 +487,14 @@ mod tests {
     #[test]
     fn mul_small() {
         //exact
-        let m: FractionMatrixExact = vec![vec![0.into(), 1.into()], vec![0.into(), 1.into()]]
+        let m: FractionMatrix = vec![vec![0.into(), 1.into()], vec![0.into(), 1.into()]]
             .try_into()
             .unwrap();
 
-        let v: Vec<FractionExact> = vec![1.into(), 0.into()];
+        let v: Vec<Fraction> = vec![1.into(), 0.into()];
 
         let answer_mv = vec![0.into(), 0.into()];
-        let answer_vm: Vec<FractionExact> = vec![0.into(), 1.into()];
-
-        assert_eq!((&m * &v).unwrap(), answer_mv);
-        assert_eq!((&v * &m).unwrap(), answer_vm);
-
-        //f64
-        let m: FractionMatrixF64 = vec![vec![0.into(), 1.into()], vec![0.into(), 1.into()]]
-            .try_into()
-            .unwrap();
-
-        let v: Vec<FractionF64> = vec![1.into(), 0.into()];
-
-        let answer_mv = vec![0.into(), 0.into()];
-        let answer_vm = vec![0.into(), 1.into()];
-
-        assert_eq!((&m * &v).unwrap(), answer_mv);
-        assert_eq!((&v * &m).unwrap(), answer_vm);
-
-        //enum
-        let m: FractionMatrixEnum = vec![vec![0.into(), 1.into()], vec![0.into(), 1.into()]]
-            .try_into()
-            .unwrap();
-
-        let v: Vec<FractionEnum> = vec![1.into(), 0.into()];
-
-        let answer_mv = vec![0.into(), 0.into()];
-        let answer_vm = vec![0.into(), 1.into()];
+        let answer_vm: Vec<Fraction> = vec![0.into(), 1.into()];
 
         assert_eq!((&m * &v).unwrap(), answer_mv);
         assert_eq!((&v * &m).unwrap(), answer_vm);
@@ -590,18 +502,18 @@ mod tests {
 
     #[test]
     fn mul_vector_matrix() {
-        let m: FractionMatrixExact = vec![
+        let m: FractionMatrix = vec![
             vec![0.into(), 1.into(), 2.into()],
             vec![0.into(), 1.into(), 2.into()],
         ]
         .try_into()
         .unwrap();
 
-        let v: Vec<FractionExact> = vec![0.into(), 1.into()];
-        let v2: Vec<FractionExact> = vec![0.into(), 1.into(), 2.into()];
+        let v: Vec<Fraction> = vec![0.into(), 1.into()];
+        let v2: Vec<Fraction> = vec![0.into(), 1.into(), 2.into()];
 
         let answer_mv = vec![5.into(), 5.into()];
-        let answer_vm: Vec<FractionExact> = vec![0.into(), 1.into(), 2.into()];
+        let answer_vm: Vec<Fraction> = vec![0.into(), 1.into(), 2.into()];
 
         assert_eq!((&m * &v2).unwrap(), answer_mv);
         assert_eq!((&v * &m).unwrap(), answer_vm);

@@ -58,3 +58,16 @@ impl One for LogPolynomialEnum {
         }
     }
 }
+
+#[cfg(test)]
+pub mod tests {
+    use crate::{One, Zero, log_polynomial::log_polynomial::LogPolynomial};
+
+    #[test]
+    fn one() {
+        assert!(LogPolynomial::one().is_one());
+        assert_eq!(LogPolynomial::one(), LogPolynomial::one());
+        assert_eq!(LogPolynomial::from(1), LogPolynomial::one());
+        assert_ne!(LogPolynomial::from(1), LogPolynomial::zero());
+    }
+}

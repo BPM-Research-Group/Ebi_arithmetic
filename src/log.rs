@@ -25,7 +25,7 @@ pub trait Log {
 
 impl<T> Log for T
 where
-    LogPolynomial: LogOf<T>,
+    LogPolynomial: for<'a> LogOf<&'a T>,
 {
     fn log(&self) -> Result<LogPolynomial>
     where
@@ -50,7 +50,7 @@ pub trait LogOf<T> {
     /// May return an error if the argument is too large, that is, for now, cannot be represented by an u128.
     ///
     /// If a multiplication with argument is foreseen, then the n_log_n function is more efficient.
-    fn log_of(argument: &T) -> Result<Self>
+    fn log_of(argument: T) -> Result<Self>
     where
         Self: Sized;
 
@@ -59,7 +59,7 @@ pub trait LogOf<T> {
     ///
     /// This is a potentially expensive operation, as the prime factors of the argument may be computed.
     /// May return an error if the argument is too large, that is, for now, cannot be represented by an u128.
-    fn n_log_n_of(argument: &T) -> Result<Self>
+    fn n_log_n_of(argument: T) -> Result<Self>
     where
         Self: Sized;
 }

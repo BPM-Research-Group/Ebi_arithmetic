@@ -4,8 +4,9 @@ use crate::{
         log_polynomial_exact::LogPolynomialExact, log_polynomial_f64::LogPolynomialF64,
     },
 };
+use std::fmt::{Debug, Display};
 
-#[derive(Clone)]
+#[derive(Clone, Eq, PartialEq)]
 pub enum LogPolynomialEnum {
     Approx(LogPolynomialF64),
     Exact(LogPolynomialExact),
@@ -32,6 +33,28 @@ impl LogPolynomialEnum {
             (LogPolynomialEnum::Exact(_), LogPolynomialEnum::Exact(_)) => true,
             (LogPolynomialEnum::Approx(_), LogPolynomialEnum::Approx(_)) => true,
             _ => false,
+        }
+    }
+}
+
+impl Display for LogPolynomialEnum {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            LogPolynomialEnum::Approx(lp) => std::fmt::Display::fmt(&lp, f),
+            LogPolynomialEnum::Exact(lp) => std::fmt::Display::fmt(&lp, f),
+            LogPolynomialEnum::CannotCombineExactAndApprox => {
+                writeln!(f, "Cannot combine exact and approximate arithmetic.")
+            }
+        }
+    }
+}
+
+impl Debug for LogPolynomialEnum {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Approx(arg0) => f.debug_tuple("Approx").field(arg0).finish(),
+            Self::Exact(arg0) => f.debug_tuple("Exact").field(arg0).finish(),
+            Self::CannotCombineExactAndApprox => write!(f, "CannotCombineExactAndApprox"),
         }
     }
 }

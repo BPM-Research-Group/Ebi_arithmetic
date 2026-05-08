@@ -3,6 +3,7 @@ use crate::{
     fraction::{
         fraction_enum::FractionEnum, fraction_exact::FractionExact, fraction_f64::FractionF64,
     },
+    is_exact_globally,
     log_polynomial::{
         log_polynomial_enum::LogPolynomialEnum, log_polynomial_exact::LogPolynomialExact,
         log_polynomial_f64::LogPolynomialF64,
@@ -12,27 +13,13 @@ use fnv::FnvBuildHasher;
 use malachite::{Natural, Rational, base::num::basic::traits::Two};
 use std::collections::HashMap;
 
-impl From<FractionExact> for LogPolynomialExact {
-    fn from(value: FractionExact) -> Self {
+impl From<Rational> for LogPolynomialExact {
+    fn from(value: Rational) -> Self {
         if value.is_zero() {
             Self::zero()
         } else {
             let mut argument2coefficient = HashMap::<_, _, FnvBuildHasher>::default();
-            argument2coefficient.insert(Natural::TWO, value.0);
-            Self {
-                argument2coefficient,
-            }
-        }
-    }
-}
-
-impl From<&FractionExact> for LogPolynomialExact {
-    fn from(value: &FractionExact) -> Self {
-        if value.is_zero() {
-            Self::zero()
-        } else {
-            let mut argument2coefficient = HashMap::<_, _, FnvBuildHasher>::default();
-            argument2coefficient.insert(Natural::TWO, value.0.clone());
+            argument2coefficient.insert(Natural::TWO, value);
             Self {
                 argument2coefficient,
             }
@@ -54,7 +41,19 @@ impl From<&Rational> for LogPolynomialExact {
     }
 }
 
-macro_rules! from_rational {
+impl From<FractionExact> for LogPolynomialExact {
+    fn from(value: FractionExact) -> Self {
+        value.0.into()
+    }
+}
+
+impl From<&FractionExact> for LogPolynomialExact {
+    fn from(value: &FractionExact) -> Self {
+        (&value.0).into()
+    }
+}
+
+macro_rules! from_primitive {
     ($t:ty) => {
         impl From<$t> for LogPolynomialExact {
             fn from(value: $t) -> Self {
@@ -69,20 +68,35 @@ macro_rules! from_rational {
                 }
             }
         }
+
+        impl From<$t> for LogPolynomialF64 {
+            fn from(value: $t) -> Self {
+                Self(value as f64)
+            }
+        }
+
+        impl From<$t> for LogPolynomialEnum {
+            fn from(value: $t) -> Self {
+                if is_exact_globally() {
+                    Self::Exact(value.into())
+                } else {
+                    Self::Approx(value.into())
+                }
+            }
+        }
     };
 }
-from_rational!(Rational);
-from_rational!(usize);
-from_rational!(u128);
-from_rational!(u64);
-from_rational!(u32);
-from_rational!(u16);
-from_rational!(u8);
-from_rational!(i128);
-from_rational!(i64);
-from_rational!(i32);
-from_rational!(i16);
-from_rational!(i8);
+from_primitive!(usize);
+from_primitive!(u128);
+from_primitive!(u64);
+from_primitive!(u32);
+from_primitive!(u16);
+from_primitive!(u8);
+from_primitive!(i128);
+from_primitive!(i64);
+from_primitive!(i32);
+from_primitive!(i16);
+from_primitive!(i8);
 
 impl From<FractionF64> for LogPolynomialF64 {
     fn from(value: FractionF64) -> Self {
