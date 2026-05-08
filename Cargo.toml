@@ -27,6 +27,8 @@ rand_chacha = "0.9.0"
 malachite = { version="0.9.1", features = ["random"] }
 serial_test = "3.4.0"
 intmap = "3.1.3"
+fnv = "1.0.7"
+prime_factorization = "1.0.5"
 
 [profile.release]
 debug = false

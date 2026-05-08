@@ -9,7 +9,7 @@ use malachite::{
 
 pub trait Approximate {
     /// Returns the f64 that is closest to the given number.
-    /// Warning: do not convert a Fraction to an f64 and then back to a Fraction. Obviously, exactness is then lost.
+    /// Warning: do not convert an object to an f64 and then back to that object. Obviously, exactness is then lost.
     fn approximate(self) -> Result<f64>;
 }
 

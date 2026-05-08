@@ -17,6 +17,8 @@ pub mod fraction {
 }
 pub mod log_polynomial {
     pub mod add;
+    pub mod approximate;
+    pub mod from;
     pub mod log;
     pub mod log_polynomial_exact;
     pub mod mul;
