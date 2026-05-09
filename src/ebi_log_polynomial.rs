@@ -1,11 +1,14 @@
 use crate::{
-    MaybeExact, One, Zero, fraction::{
+    MaybeExact, One, Zero,
+    fraction::{
         approximate::Approximate, fraction_enum::FractionEnum, fraction_exact::FractionExact,
         fraction_f64::FractionF64,
-    }, log::LogOf, log_polynomial::{
+    },
+    log::LogOf,
+    log_polynomial::{
         log_polynomial_enum::LogPolynomialEnum, log_polynomial_exact::LogPolynomialExact,
         log_polynomial_f64::LogPolynomialF64,
-    }
+    },
 };
 use std::{
     fmt::{Debug, Display},
@@ -38,6 +41,16 @@ pub trait EbiLogPolynomial<T>:
     + LogOf<i32>
     + LogOf<i16>
     + LogOf<i8>
+    + for<'a> LogOf<&'a usize>
+    + for<'a> LogOf<&'a u64>
+    + for<'a> LogOf<&'a u32>
+    + for<'a> LogOf<&'a u16>
+    + for<'a> LogOf<&'a u8>
+    + for<'a> LogOf<&'a i128>
+    + for<'a> LogOf<&'a i64>
+    + for<'a> LogOf<&'a i32>
+    + for<'a> LogOf<&'a i16>
+    + for<'a> LogOf<&'a i8>
     + MulAssign<T>
     + for<'a> MulAssign<&'a T>
     + MulAssign<usize>

@@ -249,6 +249,22 @@ macro_rules! log_primitive {
             }
         }
 
+        impl LogOf<&$t> for LogPolynomialExact {
+            fn log_of(argument: &$t) -> Result<Self> {
+                if argument.is_not_positive() {
+                    return Err(anyhow!("Can only take a logarithm of a positive number."));
+                }
+                LogPolynomialExact::log_of(*argument as u128)
+            }
+
+            fn n_log_n_of(argument: &$t) -> Result<Self> {
+                if argument.is_not_positive() {
+                    return Err(anyhow!("Can only take a logarithm of a positive number."));
+                }
+                LogPolynomialExact::n_log_n_of(*argument as u128)
+            }
+        }
+
         impl LogOf<$t> for LogPolynomialF64 {
             fn log_of(argument: $t) -> Result<Self> {
                 if argument.is_not_positive() {
@@ -262,6 +278,22 @@ macro_rules! log_primitive {
                     return Err(anyhow!("Can only take a logarithm of a positive number."));
                 }
                 LogPolynomialF64::n_log_n_of(argument as f64)
+            }
+        }
+
+        impl LogOf<&$t> for LogPolynomialF64 {
+            fn log_of(argument: &$t) -> Result<Self> {
+                if argument.is_not_positive() {
+                    return Err(anyhow!("Can only take a logarithm of a positive number."));
+                }
+                LogPolynomialF64::log_of(*argument as f64)
+            }
+
+            fn n_log_n_of(argument: &$t) -> Result<Self> {
+                if argument.is_not_positive() {
+                    return Err(anyhow!("Can only take a logarithm of a positive number."));
+                }
+                LogPolynomialF64::n_log_n_of(*argument as f64)
             }
         }
 
@@ -279,6 +311,24 @@ macro_rules! log_primitive {
                     return Err(anyhow!("Can only take a logarithm of a positive number."));
                 }
                 let f = FractionEnum::from(argument);
+                LogPolynomialEnum::n_log_n_of(f)
+            }
+        }
+
+        impl LogOf<&$t> for LogPolynomialEnum {
+            fn log_of(argument: &$t) -> Result<Self> {
+                if argument.is_not_positive() {
+                    return Err(anyhow!("Can only take a logarithm of a positive number."));
+                }
+                let f = FractionEnum::from(*argument);
+                LogPolynomialEnum::log_of(f)
+            }
+
+            fn n_log_n_of(argument: &$t) -> Result<Self> {
+                if argument.is_not_positive() {
+                    return Err(anyhow!("Can only take a logarithm of a positive number."));
+                }
+                let f = FractionEnum::from(*argument);
                 LogPolynomialEnum::n_log_n_of(f)
             }
         }
