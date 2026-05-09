@@ -348,9 +348,10 @@ log_primitive!(i8);
 #[cfg(test)]
 mod tests {
     use crate::{
-        fraction::{approximate::Approximate, fraction_exact::FractionExact},
+        Fraction, Log,
+        fraction::approximate::Approximate,
         log::LogOf,
-        log_polynomial::log_polynomial_exact::LogPolynomialExact,
+        log_polynomial::{log_polynomial::LogPolynomial, log_polynomial_exact::LogPolynomialExact},
     };
     use malachite::Natural;
 
@@ -375,12 +376,17 @@ mod tests {
 
     #[test]
     fn log_fraction() {
-        let half = FractionExact::from((1, 2));
-        let nlogn = LogPolynomialExact::n_log_n_of(&half).unwrap();
-        let result = LogPolynomialExact::from(-FractionExact::from((1, 2)));
+        let half = Fraction::from((1, 2));
+        let nlogn = LogPolynomial::n_log_n_of(&half).unwrap();
+        let result = LogPolynomial::from(-Fraction::from((1, 2)));
 
         assert_eq!(nlogn, result);
 
         assert_eq!(nlogn.approximate().unwrap(), -0.5);
+    }
+
+    #[test]
+    fn log_usize() {
+        assert_eq!(4usize.log().unwrap(), LogPolynomial::from(2))
     }
 }
