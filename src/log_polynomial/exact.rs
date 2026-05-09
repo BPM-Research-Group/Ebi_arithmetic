@@ -125,9 +125,9 @@ impl MaybeExact for LogPolynomialEnum {
         }
     }
 
-    fn try_to_exact(exact: <LogPolynomialEnum as MaybeExact>::Exact) -> Result<Self> {
+    fn try_to_exact(exact: <Self as MaybeExact>::Exact) -> Result<Self> {
         if is_exact_globally() {
-            Ok(LogPolynomialEnum::Exact(exact))
+            Ok(Self::Exact(exact))
         } else {
             Err(anyhow!("cannot put float in a fraction"))
         }
@@ -135,7 +135,7 @@ impl MaybeExact for LogPolynomialEnum {
 
     fn try_to_approx(approx: Self::Approximate) -> Result<Self> {
         if !is_exact_globally() {
-            Ok(LogPolynomialEnum::Approx(approx))
+            Ok(Self::Approx(approx))
         } else {
             Err(anyhow!("cannot put fraction in a float"))
         }
