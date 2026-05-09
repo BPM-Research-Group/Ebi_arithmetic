@@ -210,10 +210,7 @@ impl LogOf<FractionEnum> for LogPolynomialEnum {
 }
 
 impl LogOf<&FractionEnum> for LogPolynomialEnum {
-    fn log_of(argument: &FractionEnum) -> Result<Self>
-    where
-        Self: Sized,
-    {
+    fn log_of(argument: &FractionEnum) -> Result<Self> {
         match argument {
             FractionEnum::Exact(f) => Ok(Self::Exact(LogPolynomialExact::log_of(f)?)),
             FractionEnum::Approx(f) => Ok(Self::Approx(LogPolynomialF64::log_of(*f)?)),
@@ -223,10 +220,7 @@ impl LogOf<&FractionEnum> for LogPolynomialEnum {
         }
     }
 
-    fn n_log_n_of(argument: &FractionEnum) -> Result<Self>
-    where
-        Self: Sized,
-    {
+    fn n_log_n_of(argument: &FractionEnum) -> Result<Self> {
         match argument {
             FractionEnum::Exact(f) => Ok(Self::Exact(LogPolynomialExact::n_log_n_of(f)?)),
             FractionEnum::Approx(f) => Ok(Self::Approx(LogPolynomialF64::n_log_n_of(*f)?)),
@@ -237,10 +231,76 @@ impl LogOf<&FractionEnum> for LogPolynomialEnum {
     }
 }
 
+macro_rules! log_primitive {
+    ($t:ty) => {
+        impl LogOf<$t> for LogPolynomialExact {
+            fn log_of(argument: $t) -> Result<Self> {
+                if argument.is_not_positive() {
+                    return Err(anyhow!("Can only take a logarithm of a positive number."));
+                }
+                LogPolynomialExact::log_of(argument as u128)
+            }
+
+            fn n_log_n_of(argument: $t) -> Result<Self> {
+                if argument.is_not_positive() {
+                    return Err(anyhow!("Can only take a logarithm of a positive number."));
+                }
+                LogPolynomialExact::n_log_n_of(argument as u128)
+            }
+        }
+
+        impl LogOf<$t> for LogPolynomialF64 {
+            fn log_of(argument: $t) -> Result<Self> {
+                if argument.is_not_positive() {
+                    return Err(anyhow!("Can only take a logarithm of a positive number."));
+                }
+                LogPolynomialF64::log_of(argument as f64)
+            }
+
+            fn n_log_n_of(argument: $t) -> Result<Self> {
+                if argument.is_not_positive() {
+                    return Err(anyhow!("Can only take a logarithm of a positive number."));
+                }
+                LogPolynomialF64::n_log_n_of(argument as f64)
+            }
+        }
+
+        impl LogOf<$t> for LogPolynomialEnum {
+            fn log_of(argument: $t) -> Result<Self> {
+                if argument.is_not_positive() {
+                    return Err(anyhow!("Can only take a logarithm of a positive number."));
+                }
+                let f = FractionEnum::from(argument);
+                LogPolynomialEnum::log_of(f)
+            }
+
+            fn n_log_n_of(argument: $t) -> Result<Self> {
+                if argument.is_not_positive() {
+                    return Err(anyhow!("Can only take a logarithm of a positive number."));
+                }
+                let f = FractionEnum::from(argument);
+                LogPolynomialEnum::n_log_n_of(f)
+            }
+        }
+    };
+}
+log_primitive!(usize);
+log_primitive!(u64);
+log_primitive!(u32);
+log_primitive!(u16);
+log_primitive!(u8);
+log_primitive!(i128);
+log_primitive!(i64);
+log_primitive!(i32);
+log_primitive!(i16);
+log_primitive!(i8);
+
 #[cfg(test)]
 mod tests {
     use crate::{
-        fraction::{approximate::Approximate, fraction_exact::FractionExact}, log::LogOf, log_polynomial::log_polynomial_exact::LogPolynomialExact
+        fraction::{approximate::Approximate, fraction_exact::FractionExact},
+        log::LogOf,
+        log_polynomial::log_polynomial_exact::LogPolynomialExact,
     };
     use malachite::Natural;
 

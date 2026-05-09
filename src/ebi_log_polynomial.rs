@@ -28,6 +28,16 @@ pub trait EbiLogPolynomial<T>:
     + From<i8>
     + LogOf<T>
     + for<'a> LogOf<&'a T>
+    + LogOf<usize>
+    + LogOf<u64>
+    + LogOf<u32>
+    + LogOf<u16>
+    + LogOf<u8>
+    + LogOf<i128>
+    + LogOf<i64>
+    + LogOf<i32>
+    + LogOf<i16>
+    + LogOf<i8>
     + MulAssign<T>
     + for<'a> MulAssign<&'a T>
     + MulAssign<usize>
