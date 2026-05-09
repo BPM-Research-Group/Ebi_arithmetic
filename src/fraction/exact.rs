@@ -6,6 +6,7 @@ use crate::{
     fraction::{
         fraction_enum::FractionEnum, fraction_exact::FractionExact, fraction_f64::FractionF64,
     },
+    is_exact_globally,
 };
 
 impl MaybeExact for FractionF64 {
@@ -31,6 +32,14 @@ impl MaybeExact for FractionF64 {
     fn exact(self) -> Result<Self::Exact> {
         Err(anyhow!("cannot extract a fraction from a float"))
     }
+
+    fn try_to_exact(_: Self::Exact) -> Result<Self> {
+        Err(anyhow!("cannot put fraction in a float"))
+    }
+
+    fn try_to_approx(approx: Self::Approximate) -> Result<Self> {
+        Ok(FractionF64(approx))
+    }
 }
 
 impl MaybeExact for FractionExact {
@@ -55,6 +64,14 @@ impl MaybeExact for FractionExact {
 
     fn exact(self) -> Result<Rational> {
         Ok(self.0)
+    }
+
+    fn try_to_exact(exact: Self::Exact) -> Result<Self> {
+        Ok(FractionExact(exact))
+    }
+
+    fn try_to_approx(_: Self::Approximate) -> Result<Self> {
+        Err(anyhow!("cannot put float in a fraction"))
     }
 }
 
@@ -109,11 +126,26 @@ impl MaybeExact for FractionEnum {
             }
         }
     }
+
+    fn try_to_exact(exact: <FractionEnum as MaybeExact>::Exact) -> Result<Self> {
+        if is_exact_globally() {
+            Ok(FractionEnum::Exact(exact))
+        } else {
+            Err(anyhow!("cannot put float in a fraction"))
+        }
+    }
+
+    fn try_to_approx(approx: Self::Approximate) -> Result<Self> {
+        if !is_exact_globally() {
+            Ok(FractionEnum::Approx(approx))
+        } else {
+            Err(anyhow!("cannot put fraction in a float"))
+        }
+    }
 }
 
 impl MaybeExact for Rational {
     type Approximate = f64;
-
     type Exact = Rational;
 
     fn is_exact(&self) -> bool {
@@ -137,11 +169,18 @@ impl MaybeExact for Rational {
     fn exact(self) -> Result<Self::Exact> {
         Ok(self)
     }
+
+    fn try_to_exact(exact: Self::Exact) -> Result<Self> {
+        Ok(exact)
+    }
+
+    fn try_to_approx(_: Self::Approximate) -> Result<Self> {
+        Err(anyhow!("cannot put float in a fraction"))
+    }
 }
 
 impl MaybeExact for Integer {
     type Approximate = f64;
-
     type Exact = Integer;
 
     fn is_exact(&self) -> bool {
@@ -167,11 +206,18 @@ impl MaybeExact for Integer {
     fn exact(self) -> Result<Self::Exact> {
         Ok(self)
     }
+
+    fn try_to_exact(exact: Self::Exact) -> Result<Self> {
+        Ok(exact)
+    }
+
+    fn try_to_approx(_: Self::Approximate) -> Result<Self> {
+        Err(anyhow!("cannot put float in an integer"))
+    }
 }
 
 impl MaybeExact for Natural {
     type Approximate = f64;
-
     type Exact = Natural;
 
     fn is_exact(&self) -> bool {
@@ -196,6 +242,14 @@ impl MaybeExact for Natural {
 
     fn exact(self) -> Result<Self::Exact> {
         Ok(self)
+    }
+
+    fn try_to_exact(exact: Self::Exact) -> Result<Self> {
+        Ok(exact)
+    }
+
+    fn try_to_approx(_: Self::Approximate) -> Result<Self> {
+        Err(anyhow!("cannot put float in an integer"))
     }
 }
 
@@ -223,6 +277,14 @@ macro_rules! approx {
 
             fn exact(self) -> Result<Self::Exact> {
                 Err(anyhow!("cannot extract exact value"))
+            }
+
+            fn try_to_exact(_: Self::Exact) -> Result<Self> {
+                Err(anyhow!("cannot put fraction in a float"))
+            }
+
+            fn try_to_approx(approx: Self::Approximate) -> Result<Self> {
+                Ok(approx)
             }
         }
     };
@@ -252,6 +314,14 @@ macro_rules! exact {
 
             fn exact(self) -> Result<Self::Exact> {
                 Ok(self)
+            }
+
+            fn try_to_exact(exact: Self::Exact) -> Result<Self> {
+                Ok(exact)
+            }
+
+            fn try_to_approx(_: Self::Approximate) -> Result<Self> {
+                Err(anyhow!("cannot put float in an integer"))
             }
         }
     };

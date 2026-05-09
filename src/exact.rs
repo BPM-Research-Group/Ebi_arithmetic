@@ -55,4 +55,10 @@ pub trait MaybeExact {
      * This is a low-level function to extract an exact value. Will only succeed if the fraction is exact.
      */
     fn exact(self) -> Result<Self::Exact>;
+
+    /// Attempts to create an object, but will fail if the mode is approximate.
+    fn try_to_exact(exact: Self::Exact) -> Result<Self> where Self: Sized;
+
+    /// Attempts to create an object, but will fail if the mode is exact.
+    fn try_to_approx(approx: Self::Approximate) -> Result<Self> where Self: Sized;
 }

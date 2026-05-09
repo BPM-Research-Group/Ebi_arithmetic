@@ -1,5 +1,5 @@
 use crate::{
-    MaybeExact,
+    MaybeExact, is_exact_globally,
     log_polynomial::{
         log_polynomial_enum::LogPolynomialEnum, log_polynomial_exact::LogPolynomialExact,
         log_polynomial_f64::LogPolynomialF64,
@@ -30,6 +30,14 @@ impl MaybeExact for LogPolynomialExact {
     fn exact(self) -> Result<Self::Exact> {
         Ok(self)
     }
+
+    fn try_to_exact(exact: Self::Exact) -> Result<Self> {
+        Ok(exact)
+    }
+
+    fn try_to_approx(_: Self::Approximate) -> Result<Self> {
+        Err(anyhow!("cannot put float in a fraction"))
+    }
 }
 
 impl MaybeExact for LogPolynomialF64 {
@@ -54,6 +62,14 @@ impl MaybeExact for LogPolynomialF64 {
 
     fn exact(self) -> Result<Self::Exact> {
         Err(anyhow!("cannot extract a fraction from a float"))
+    }
+
+    fn try_to_exact(_: Self::Exact) -> Result<Self> {
+        Err(anyhow!("cannot put fraction in a float"))
+    }
+
+    fn try_to_approx(approx: Self::Approximate) -> Result<Self> {
+        Ok(approx)
     }
 }
 
@@ -106,6 +122,22 @@ impl MaybeExact for LogPolynomialEnum {
             LogPolynomialEnum::CannotCombineExactAndApprox => {
                 Err(anyhow!("Cannot combine exact and approximate arithmetic."))
             }
+        }
+    }
+
+    fn try_to_exact(exact: <LogPolynomialEnum as MaybeExact>::Exact) -> Result<Self> {
+        if is_exact_globally() {
+            Ok(LogPolynomialEnum::Exact(exact))
+        } else {
+            Err(anyhow!("cannot put float in a fraction"))
+        }
+    }
+
+    fn try_to_approx(approx: Self::Approximate) -> Result<Self> {
+        if !is_exact_globally() {
+            Ok(LogPolynomialEnum::Approx(approx))
+        } else {
+            Err(anyhow!("cannot put fraction in a float"))
         }
     }
 }

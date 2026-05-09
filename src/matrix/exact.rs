@@ -1,11 +1,12 @@
 use crate::{
     exact::MaybeExact,
+    is_exact_globally,
     matrix::{
         fraction_matrix_enum::FractionMatrixEnum, fraction_matrix_exact::FractionMatrixExact,
         fraction_matrix_f64::FractionMatrixF64,
     },
 };
-use anyhow::anyhow;
+use anyhow::{Result, anyhow};
 
 impl MaybeExact for FractionMatrixF64 {
     type Approximate = FractionMatrixF64;
@@ -29,6 +30,14 @@ impl MaybeExact for FractionMatrixF64 {
 
     fn exact(self) -> anyhow::Result<Self::Exact> {
         Err(anyhow!("cannot extract a fraction from a float"))
+    }
+
+    fn try_to_exact(_: Self::Exact) -> Result<Self> {
+        Err(anyhow!("cannot put fraction in a float"))
+    }
+
+    fn try_to_approx(approx: Self::Approximate) -> Result<Self> {
+        Ok(approx)
     }
 }
 
@@ -55,6 +64,14 @@ impl MaybeExact for FractionMatrixExact {
 
     fn exact(self) -> anyhow::Result<Self::Exact> {
         Ok(self)
+    }
+
+    fn try_to_exact(exact: Self::Exact) -> Result<Self> {
+        Ok(exact)
+    }
+
+    fn try_to_approx(_: Self::Approximate) -> Result<Self> {
+        Err(anyhow!("cannot put float in a fraction"))
     }
 }
 
@@ -104,6 +121,22 @@ impl MaybeExact for FractionMatrixEnum {
             FractionMatrixEnum::CannotCombineExactAndApprox => {
                 Err(anyhow!("cannot combine exact and approximate arithmetic"))
             }
+        }
+    }
+
+    fn try_to_exact(exact: <FractionMatrixEnum as MaybeExact>::Exact) -> Result<Self> {
+        if is_exact_globally() {
+            Ok(FractionMatrixEnum::Exact(exact))
+        } else {
+            Err(anyhow!("cannot put float in a fraction"))
+        }
+    }
+
+    fn try_to_approx(approx: Self::Approximate) -> Result<Self> {
+        if !is_exact_globally() {
+            Ok(FractionMatrixEnum::Approx(approx))
+        } else {
+            Err(anyhow!("cannot put fraction in a float"))
         }
     }
 }
