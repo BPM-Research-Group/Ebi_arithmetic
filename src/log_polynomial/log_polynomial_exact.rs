@@ -47,6 +47,10 @@ impl Display for LogPolynomialExact {
         let mut list = self.argument2coefficient.iter().collect::<Vec<_>>();
         list.sort();
 
+        if list.is_empty() {
+            return write!(f, "0");
+        }
+
         let display = |argument, coefficient| {
             if argument == &Natural::TWO {
                 format!("{coefficient}")
