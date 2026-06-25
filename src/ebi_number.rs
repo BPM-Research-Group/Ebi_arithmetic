@@ -72,6 +72,9 @@ pub trait Round: Sized {
 
     /// Returns the smallest integer greater than or equal to `self`.
     fn ceil(self) -> Self;
+
+    ///Returns the nearest integer to self. If a value is half-way between two integers, round away from zero.
+    fn round_half_away_from_zero(self) -> Self;
 }
 
 pub trait Recip: Sized {
