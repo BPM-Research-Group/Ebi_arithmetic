@@ -5,7 +5,7 @@ use anyhow::Result;
 use malachite::base::random::Seed;
 use rand::RngCore;
 
-pub trait EbiNumber: Zero + One + Round + Clone {}
+pub trait EbiNumber: Zero + One + Round + Clone + ToNative {}
 
 impl EbiNumber for FractionEnum {}
 impl EbiNumber for FractionF64 {}
@@ -159,4 +159,10 @@ pub trait Sqrt {
     {
         self.abs().approx_sqrt(precision_decimals).unwrap()
     }
+}
+
+pub trait ToNative {
+    /// Returns the nearest usize to `self`. If a value is half-way between two usizes, rounds away from zero.
+    /// In case there is no sensible notion of 'nearest', returns `usize::MAX`.
+    fn to_usize(&self) -> usize;
 }

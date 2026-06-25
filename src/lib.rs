@@ -13,6 +13,7 @@ pub mod fraction {
     pub mod round;
     pub mod signed;
     pub mod sqrt;
+    pub mod to_native;
     pub mod zero;
 }
 pub mod log_polynomial {
